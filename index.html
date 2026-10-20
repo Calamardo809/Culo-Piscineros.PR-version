@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Culo Piscineros.PR version</title>
-    <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-    <script src="peer-mqtt-shim.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
@@ -25,6 +24,7 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
             aspect-ratio: 2.5 / 3.5;
             background-color: white;
+            flex-shrink: 0;
         }
 
         .playing-card:hover:not(.disabled) {
@@ -42,7 +42,7 @@
         .card-red { color: #dc2626; }
         .card-black { color: #111827; }
 
-        /* Taula de joc gegant */
+        /* Taula de joc gegant i absolutament fixa */
         .casino-table {
             background: radial-gradient(circle at center, #0f4c23 0%, #062b11 100%);
             box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
@@ -148,7 +148,7 @@
     </div>
 
     <!-- CAPÇALERA -->
-    <header class="flex justify-between items-center bg-black/60 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 mb-3 shadow-lg">
+    <header class="flex justify-between items-center bg-black/60 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 mb-3 shadow-lg shrink-0">
         <div class="flex items-center space-x-2">
             <span class="text-3xl drop-shadow-md">🃏</span>
             <h1 class="text-xl md:text-2xl font-black tracking-wide text-amber-400 drop-shadow-md">Culo <span class="text-emerald-400 text-sm uppercase font-bold">Online</span></h1>
@@ -164,11 +164,11 @@
     <!-- TAULA DE JOC -->
     <main class="flex-1 flex flex-col justify-between max-w-7xl w-full mx-auto relative my-1 gap-2">
         
-        <!-- OPONENTS -->
-        <div id="opponents-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3 mb-2"></div>
+        <!-- OPONENTS (ALTURA FIXA PER EVITAR SALTS) -->
+        <div id="opponents-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3 mb-2 shrink-0 min-h-[84px]"></div>
 
-        <!-- TAULA CENTRAL (MÉS GRAN I VISIBLE) -->
-        <div class="flex-1 min-h-[280px] md:min-h-[350px] casino-table rounded-[2rem] p-6 md:p-10 relative flex flex-col items-center justify-center my-2">
+        <!-- TAULA CENTRAL (FIXA) -->
+        <div class="flex-1 h-[280px] md:h-[350px] shrink-0 casino-table rounded-[2rem] p-6 md:p-10 relative flex flex-col items-center justify-center my-2">
             <div class="absolute top-4 left-0 right-0 flex justify-center items-center gap-3">
                 <span class="text-xs md:text-sm font-black text-emerald-400/80 uppercase tracking-[0.2em] bg-black/50 px-4 py-1 rounded-full border border-emerald-500/30">Taula Central</span>
                 <span id="reverse-indicator" class="hidden text-[10px] md:text-xs font-black bg-amber-500 text-gray-900 border-2 border-amber-300 px-3 py-1 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.6)] animate-bounce">
@@ -176,45 +176,46 @@
                 </span>
             </div>
             
-            <div id="table-cards" class="flex flex-wrap justify-center gap-4 my-6 min-h-[140px] items-center">
+            <div id="table-cards" class="flex flex-wrap justify-center gap-4 my-6 h-[140px] items-center shrink-0">
                 <span class="text-emerald-300/50 text-sm md:text-base font-semibold italic">La taula està neta. Esperant la tirada...</span>
             </div>
 
-            <div id="table-info" class="absolute bottom-4 text-sm md:text-base font-bold text-amber-300 bg-black/60 px-6 py-1.5 rounded-full border border-amber-500/30"></div>
+            <!-- INFORMACIÓ DE TAULA AMB OPACITAT CONTROLADA PER EVITAR SALTS -->
+            <div id="table-info" class="absolute bottom-4 text-sm md:text-base font-bold text-amber-300 bg-black/60 px-6 py-1.5 rounded-full border border-amber-500/30 opacity-0 transition-opacity"> - </div>
         </div>
 
-        <!-- HISTORIAL I CONTROLS -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4 items-stretch mt-2">
+        <!-- HISTORIAL I CONTROLS (ALTURA FIXA) -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4 items-stretch mt-2 shrink-0">
             <!-- HISTORIAL -->
-            <div class="lg:col-span-1 bg-black/70 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col h-40 lg:h-auto shadow-lg">
+            <div class="lg:col-span-1 bg-black/70 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col h-[180px] lg:h-[220px] shadow-lg">
                 <div class="text-xs md:text-sm font-black text-amber-400 mb-2 flex justify-between items-center border-b border-white/10 pb-2">
                     <span>📜 Historial en Viu</span>
                 </div>
                 <div id="action-log" class="flex-1 overflow-y-auto text-[11px] md:text-xs space-y-1.5 text-gray-300 pr-2"></div>
             </div>
 
-            <!-- CARTES DE L'HUMÀ -->
-            <div class="lg:col-span-3 bg-black/80 backdrop-blur-md border border-amber-500/30 rounded-3xl p-4 md:p-5 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+            <!-- CARTES DE L'HUMÀ (ALTURA FIXA ESTRICTA) -->
+            <div class="lg:col-span-3 bg-black/80 backdrop-blur-md border border-amber-500/30 rounded-3xl p-4 md:p-5 flex flex-col justify-between shadow-2xl relative overflow-hidden h-[180px] lg:h-[220px]">
                 <!-- Brillo de fons pel torn -->
                 <div id="turn-glow" class="absolute inset-0 bg-amber-500/5 opacity-0 transition-opacity duration-500 pointer-events-none"></div>
 
-                <div class="flex flex-wrap justify-between items-center pb-3 border-b border-white/10 mb-3 relative z-10 gap-2">
+                <div class="flex flex-wrap justify-between items-center pb-3 border-b border-white/10 mb-2 relative z-10 gap-2 shrink-0">
                     <div class="flex items-center gap-2 md:gap-3">
                         <span id="my-player-name-display" class="font-black text-amber-400 text-base md:text-lg drop-shadow-md">👤 Tu:</span>
                         <span id="player-role-badge" class="text-[10px] md:text-xs font-black px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 hidden"></span>
                         <span id="player-status-badge" class="text-xs md:text-sm px-3 py-1 rounded-full font-bold bg-gray-800 text-gray-400 border border-white/10 transition-all">Esperant...</span>
                     </div>
                     <div class="flex gap-3 w-full md:w-auto">
-                        <button id="btn-pass" class="flex-1 md:flex-none bg-red-600/90 hover:bg-red-500 text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow-lg disabled:opacity-30 disabled:cursor-not-allowed">
+                        <button id="btn-pass" class="flex-1 md:flex-none bg-red-600/90 hover:bg-red-500 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition shadow-lg disabled:opacity-30 disabled:cursor-not-allowed">
                             Passar Torn
                         </button>
-                        <button id="btn-play" class="flex-1 md:flex-none bg-amber-500 hover:bg-amber-400 text-gray-950 font-black text-sm px-8 py-3 rounded-xl transition shadow-[0_4px_15px_rgba(245,158,11,0.4)] disabled:opacity-30 disabled:shadow-none disabled:cursor-not-allowed">
+                        <button id="btn-play" class="flex-1 md:flex-none bg-amber-500 hover:bg-amber-400 text-gray-950 font-black text-sm px-8 py-2.5 rounded-xl transition shadow-[0_4px_15px_rgba(245,158,11,0.4)] disabled:opacity-30 disabled:shadow-none disabled:cursor-not-allowed">
                             Tirar Cartes
                         </button>
                     </div>
                 </div>
 
-                <div id="human-hand" class="flex flex-wrap justify-center gap-2 md:gap-3 py-3 min-h-[140px] max-h-[240px] overflow-y-auto relative z-10"></div>
+                <div id="human-hand" class="flex flex-wrap justify-center gap-2 md:gap-3 h-[110px] md:h-[130px] overflow-y-auto relative z-10 content-start"></div>
             </div>
         </div>
     </main>
@@ -253,16 +254,13 @@
             <h2 class="text-2xl font-black text-amber-400 mb-4 text-center border-b border-white/10 pb-3">📖 Regles del Joc del Culo</h2>
             <ul class="overflow-y-auto text-sm text-gray-200 space-y-4 pr-2 list-none custom-scrollbar">
                 <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">🎯</span> <b>Objectiu:</b> Quedar-te sense cartes el primer. L'ordre d'arribada defineix el teu títol: 👑 President, 🥈 Vicepresident, 😐 Neutre, 💩 Viceculo i 🤡 Culo.</li>
-                <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">🃏</span> <b>Ordre de les cartes:</b> El 3 és la més baixa, l'A és alta, i el <b>2 és la carta invencible</b>.</li>
-                <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">📏</span> <b>Jugades:</b> Pots tirar 1, 2 o 3 cartes del mateix valor. Els següents jugadors han de respectar el mateix nombre de cartes, i tirar un valor <b>igual o superior</b>.</li>
-                <li class="bg-amber-900/30 p-3 rounded-xl border border-amber-500/20 text-amber-100"><span class="text-xl">⚠️</span> <b>El 7:</b> Després d'un 7 a la taula, el següent jugador <b>només pot tirar un 7 o un 8</b>.</li>
-                <li class="bg-amber-900/30 p-3 rounded-xl border border-amber-500/20 text-amber-100"><span class="text-xl">🔻</span> <b>El 8:</b> Si tires un 8, obligues al següent jugador a tirar <b>cartes IGUALS O MENORS a 8</b>. Aquesta condició s'aplica només a la següent tirada. Si responen amb un 5, el següent ja juga normal superant el 5.</li>
-                <li class="bg-emerald-900/30 p-3 rounded-xl border border-emerald-500/20 text-emerald-100"><span class="text-xl">🧹</span> <b>El 2 de Cors (2♥):</b> Tirat de forma <b>individual</b>, neteja la taula al instant (encara que hi hagués dobles o trios) i et permet tornar a sortir. La resta de 2 només són cartes altes normals.</li>
-                <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">⭐</span> <b>BLING!:</b> Si tires una carta del mateix valor que l'anterior, fas efecte BLING!</li>
-                <li class="bg-blue-900/30 p-3 rounded-xl border border-blue-500/20 text-blue-100"><span class="text-xl">💥</span> <b>Pòquer (4 iguals):</b> Si tires 4 cartes iguals de cop, guanyes la teva posició a l'instant i acabes de jugar.</li>
-                <li class="bg-red-900/30 p-3 rounded-xl border border-red-500/20 text-red-100"><span class="text-xl">🤡</span> <b>Penalització 2♥ final:</b> Queda totalment prohibit acabar la partida tirant el 2♥ com a última carta. Si ho fas, passes a ser el Culo directe.</li>
-                <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">⏸️</span> <b>Passar:</b> Si decideixes passar el teu torn, no podràs tornar a tirar fins que es netegi la taula i comenci una ronda nova des de zero.</li>
-                <li class="bg-purple-900/30 p-3 rounded-xl border border-purple-500/20 text-purple-100"><span class="text-xl">🔄</span> <b>Intercanvi de Ronda:</b> El Culo està obligat a donar les seves 2 millors cartes al President (que li'n torna 2 de dolentes). El Viceculo dona la millor al Vicepresident (i rep 1 a canvi).</li>
+                <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">📏</span> <b>Jugades:</b> Pots tirar 1, 2 o 3 cartes iguals. Cal igualar o superar el valor de la taula respectant la mateixa quantitat de cartes.</li>
+                <li class="bg-amber-900/30 p-3 rounded-xl border border-amber-500/20 text-amber-100"><span class="text-xl">⚠️</span> <b>El 7:</b> Si tires un 7, obligues al següent a tirar <b>només un 7 o un 8</b>. Aquesta regla bloqueja inclús el 2 de cors.</li>
+                <li class="bg-amber-900/30 p-3 rounded-xl border border-amber-500/20 text-amber-100"><span class="text-xl">🔻</span> <b>El 8:</b> Si tires un 8, obligues al següent a tirar <b>cartes IGUALS O MENORS a 8</b>. També bloqueja el 2 de cors. Només s'aplica al següent jugador.</li>
+                <li class="bg-emerald-900/30 p-3 rounded-xl border border-emerald-500/20 text-emerald-100"><span class="text-xl">🧹</span> <b>El 2 de Cors (2♥):</b> Tirat <b>SOL</b>, neteja directament la taula encara que hi hagi dobles o triples (sempre i quan no estigui bloquejat per la regla del 7 o del 8). Qualsevol doble/triple de 2 que inclogui el 2♥ també neteja la taula a l'instant.</li>
+                <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">⭐</span> <b>BLING!:</b> Igualar el valor de la taula fa BLING. Això <b>salta el torn</b> del següent jugador actiu. Si jugues contra poca gent i et salta a tu mateix, neteges la taula i tornes a tirar!</li>
+                <li class="bg-blue-900/30 p-3 rounded-xl border border-blue-500/20 text-blue-100"><span class="text-xl">💥</span> <b>Pòquer:</b> 4 cartes iguals de cop netegen la taula automàticament i acabes a l'instant.</li>
+                <li class="bg-red-900/30 p-3 rounded-xl border border-red-500/20 text-red-100"><span class="text-xl">🤡</span> <b>Penalització:</b> Acabar la partida tirant el 2♥ et converteix directament en el Culo final.</li>
             </ul>
             <button id="btn-close-rules" class="mt-6 bg-amber-500 hover:bg-amber-400 text-gray-950 font-black px-8 py-3 rounded-xl text-sm uppercase tracking-wider self-center shadow-lg transition">Entès, a jugar!</button>
         </div>
@@ -306,7 +304,6 @@
             return 'u_' + Math.random().toString(36).slice(2, 10);
         }
 
-        // BACKEND DE FALLBACK (Només per provar en el mateix navegador si PeerJS falla)
         function createLocalBackend() {
             try {
                 myUserId = sessionStorage.getItem('culo_uid') || newLocalId();
@@ -341,7 +338,6 @@
             };
         }
 
-        // BACKEND MULTIJUAGDOR P2P VIA PEERJS
         const PEER_PREFIX = 'culopr-';
 
         function createPeerBackend() {
@@ -448,7 +444,6 @@
             backend.onPlayerLeft = handlePlayerLeft;
             backend.onHostLost = () => { leaveRoom(); showMessage("Connexió perduda amb l'anfitrió de la sala."); };
             
-            const hint = "Comprova la connexió a internet o que cap tallafoc bloquegi WebRTC.";
             $('connection-warning').innerText = backend.mode === 'peer' 
                 ? "Connexió P2P (PeerJS) carregada correctament. Pots jugar online." 
                 : "No s'ha pogut carregar el multijugador online. Jugant en mode Local.";
@@ -749,7 +744,7 @@
                 if (p.id === myUserId) return;
                 const current = idx === roomData.currentPlayerIndex && roomData.state === 'PLAYING';
                 const el = document.createElement('div');
-                el.className = `bg-black/60 backdrop-blur-sm p-3 rounded-2xl border ${current ? 'border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'border-white/10'} flex flex-col justify-between text-xs transition-all`;
+                el.className = `bg-black/60 backdrop-blur-sm p-3 rounded-2xl border ${current ? 'border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'border-white/10'} flex flex-col justify-between text-xs transition-all h-[84px]`;
                 const badge = p.title ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">${esc(p.title)}</span>` : '';
                 const status = p.finished ? '🏆 Ha acabat' : (p.passed ? `⏸ Ha passat · ${p.hand ? p.hand.length : 0}c` : `${p.hand ? p.hand.length : 0} cartes`);
                 el.innerHTML = `
@@ -770,8 +765,8 @@
             
             if (!t || !t.cards.length) {
                 cardsDiv.innerHTML = '<span class="text-emerald-300/50 text-sm md:text-base font-semibold italic">La taula està neta. És el teu torn de sortir!</span>';
-                info.innerText = '';
-                info.classList.add('hidden');
+                info.innerText = '-';
+                info.classList.add('opacity-0');
                 rev.classList.add('hidden');
                 return;
             }
@@ -783,13 +778,12 @@
             
             const extra = t.isSeven ? ' ⚠️ (7: Només 7 o 8)' : (t.isEightReverse ? ' 🔻 (8: Iguals o Menors)' : '');
             info.innerText = `A la taula: ${label} de ${t.cards[0].rank}${extra}`;
-            info.classList.remove('hidden');
+            info.classList.remove('opacity-0');
         }
 
         function createCardElement(card, selectable = true, index = null) {
             const el = document.createElement('div');
             const red = card.suit === '♥️' || card.suit === '♦️';
-            // Cartes més grans
             el.className = `playing-card rounded-xl p-2 md:p-3 flex flex-col justify-between w-16 h-24 md:w-20 md:h-32 ${red ? 'card-red' : 'card-black'} font-black cursor-pointer select-none border border-gray-300 shadow-md`;
             if (index !== null && selected.includes(index)) el.classList.add('selected');
             el.innerHTML = `
@@ -869,46 +863,53 @@
         }
 
         function validatePlay(cards, R = roomData) {
-            if (!cards.length) return { valid: false, msg: 'Selecciona almenys una carta de la teva mà.' };
+            if (!cards.length) return { valid: false, msg: 'Selecciona almenys una carta.' };
             const first = cards[0].rank;
-            if (!cards.every((c) => c.rank === first)) return { valid: false, msg: 'Totes les cartes seleccionades han de tenir exactament el mateix valor!' };
+            if (!cards.every((c) => c.rank === first)) return { valid: false, msg: 'Totes les cartes han de tenir el mateix valor!' };
             const val = rankIdx(cards[0]);
             const t = R.tableCombination;
 
-            // El 2♥ neteja sempre si es tira SOL (independentment de parelles o trios)
-            if (cards.length === 1 && HEART2(cards[0])) {
+            const isSingleHeart2 = cards.length === 1 && HEART2(cards[0]);
+
+            // LES RESTRICCIONS 7 i 8 BLOQUEGEN TOTHOM (fins i tot el 2 de cors)
+            if (t) {
+                if (t.isEightReverse && val > 5) {
+                    return { valid: false, msg: '⚠️ Regla del 8 Activa! Obligat a tirar IGUAL O MENOR a 8.' };
+                }
+                if (t.isSeven && first !== '7' && first !== '8') {
+                    return { valid: false, msg: '⚠️ Hi ha un 7 a la taula! Només pots tirar un 7 o un 8.' };
+                }
+            }
+
+            // Si tirem un 2♥ sol (i no hi havia restricció 7/8), neteja la taula independentment del tamany de l'anterior.
+            if (isSingleHeart2) {
                 return { valid: true, type: 'single', isClearingTwo: true, isBling: false };
             }
 
+            // Un Pòquer sempre neteja i guanya la combinació
             if (cards.length === 4) return { valid: true, type: 'poker', isPokerWin: true, isBling: false };
-            if (cards.length > 3) return { valid: false, msg: 'Només pots tirar 1, 2 o 3 cartes iguals (excepte si és un Pòquer de 4).' };
+            if (cards.length > 3) return { valid: false, msg: 'Només pots tirar 1, 2 o 3 cartes (excepte si és un Pòquer).' };
 
             const type = cards.length === 1 ? 'single' : (cards.length === 2 ? 'double' : 'triple');
             
-            // Si la taula està buida, pots tirar el que vulguis.
+            // Si la taula està buida, pots sortir amb el que vulguis
             if (!t) return { valid: true, type, isSeven: first === '7', isEightReverse: first === '8', isBling: false };
 
-            // Si hi ha cartes a la taula, s'ha de respectar la quantitat
-            if (cards.length !== t.cards.length) return { valid: false, msg: `La taula marca una jugada de ${t.cards.length} carta/es. Has de tirar el mateix nombre!` };
+            // OBLIGATORI Respectar la quantitat de cartes si no es fa servir el 2♥ sol
+            if (cards.length !== t.cards.length) return { valid: false, msg: `La taula marca una jugada de ${t.cards.length} carta/es.` };
             
-            const isBling = first === t.cards[0].rank;
+            // Cal igualar o superar el valor
+            if (val < t.valueIndex) return { valid: false, msg: 'Has de superar o igualar el valor de les cartes de la taula!' };
 
-            // Regla del 8 aplicant-se AQUESTA tirada
-            if (t.isEightReverse) {
-                // Index 5 és l'index del '8' en l'array RANKS
-                if (val > 5) return { valid: false, msg: '⚠️ Regla del 8 Activa! El jugador anterior ha tirat un 8. Estàs obligat a tirar cartes IGUALS O MENORS a 8.' };
-            } else if (t.isSeven) {
-                if (first !== '7' && first !== '8') return { valid: false, msg: '⚠️ Hi ha un 7 a la taula! L\'única resposta vàlida és un 7 o un 8.' };
-            } else if (val < t.valueIndex) {
-                return { valid: false, msg: 'Has de superar o igualar el valor de les cartes de la taula!' };
-            }
+            const isBling = first === t.cards[0].rank;
+            const isClearingTwo = first === '2' && cards.some(HEART2); // Si és un doble/triple de 2 i conté el de cors
 
             return {
                 valid: true, type,
                 isSeven: first === '7',
-                // La regla del 8 NOMÉS s'activa si TIREN UN 8 ara mateix. Si tires un 5, el isEightReverse passa a ser false per al següent.
                 isEightReverse: first === '8',
-                isBling
+                isBling,
+                isClearingTwo
             };
         }
 
@@ -958,7 +959,6 @@
                 
                 if (det.isBling) {
                     R.blingSeq = (R.blingSeq || 0) + 1;
-                    R.logs.push(`🌟 <b>BLING!</b> <b>${esc(P.name)}</b> ha igualat el <b>${cards[0].rank}</b>!`);
                 } else {
                     R.logs.push(`<b>${esc(P.name)}</b> ha tirat ${cards.length}x <b>${cards[0].rank}</b> (${cards.map((c) => c.suit).join('')})`);
                 }
@@ -968,10 +968,10 @@
                     R.logs.push(`💥 <b>INSTA-GUANYA!</b> ${esc(P.name)} ha tirat un PÒQUER!`);
                     P.finished = true;
                     P.finishOrder = R.finishOrderCounter++;
-                    P.hand = []; // Buida la mà per evitar penalitzacions de 2♥ residuals
+                    P.hand = []; 
                     clears = true;
                 } else if (det.isClearingTwo) {
-                    R.logs.push(`🧹 <b>${esc(P.name)}</b> ha tirat el <b>2♥️</b> sol. Es neteja la taula directament!`);
+                    R.logs.push(`🧹 <b>${esc(P.name)}</b> ha tirat el <b>2♥️</b>. Es neteja la taula directament!`);
                     clears = true;
                 } else {
                     R.tableCombination = {
@@ -980,12 +980,11 @@
                     };
                 }
 
-                // Si es queda sense cartes de forma natural
                 if (P.hand.length === 0 && !P.finished) {
                     P.finished = true;
                     if (cards.some(HEART2)) {
                         R.logs.push(`🤡 <b>PENALITZACIÓ FATAL!</b> ${esc(P.name)} ha acabat la partida tirant el <b>2♥️</b>. És el <b>CULO DIRECTE</b>!`);
-                        P.finishOrder = 1000 + R.finishOrderCounter++; // Enviar a l'última posició
+                        P.finishOrder = 1000 + R.finishOrderCounter++;
                     } else {
                         P.finishOrder = R.finishOrderCounter++;
                         R.logs.push(`🎉 <b>${esc(P.name)}</b> ha acabat les seves cartes i ja està salvat!`);
@@ -999,14 +998,28 @@
                 } else {
                     if (clears) {
                         clearTable(R);
+                        R.currentPlayerIndex = P.finished ? nextActive(R.players, playerIdx) : playerIdx;
                     } else if (!R.players.some((p, i) => i !== playerIdx && !p.finished && !p.passed)) {
                         clearTable(R, '🧹 <i>Ningú més pot tirar. Es neteja la taula!</i>');
-                        clears = true;
+                        R.currentPlayerIndex = P.finished ? nextActive(R.players, playerIdx) : playerIdx;
+                    } else {
+                        // Lògica de SALTS de Bling
+                        let nextPlayerIdx = nextEligible(R.players, playerIdx);
+                        if (det.isBling && nextPlayerIdx !== playerIdx) {
+                            let afterSkipIdx = nextEligible(R.players, nextPlayerIdx);
+                            if (afterSkipIdx === playerIdx) {
+                                // Nomes quedeu dos jugadors actius: saltes a l'altre i et toca a tu.
+                                clearTable(R, `🌟 <b>BLING MORTAL!</b> <b>${esc(P.name)}</b> salta a <b>${esc(R.players[nextPlayerIdx].name)}</b> i torna a ell. Es neteja la taula!`);
+                                R.currentPlayerIndex = P.finished ? nextActive(R.players, playerIdx) : playerIdx;
+                            } else {
+                                // Salta 1 jugador cap a la seguent persona
+                                R.logs.push(`🌟 <b>BLING!</b> <b>${esc(P.name)}</b> fa saltar el torn de <b>${esc(R.players[nextPlayerIdx].name)}</b>!`);
+                                R.currentPlayerIndex = afterSkipIdx;
+                            }
+                        } else {
+                            R.currentPlayerIndex = nextPlayerIdx;
+                        }
                     }
-                    
-                    R.currentPlayerIndex = clears
-                        ? (P.finished ? nextActive(R.players, playerIdx) : playerIdx) // Si neteja la taula torna a sortir ell (o el següent actiu si ja ha acabat)
-                        : nextEligible(R.players, playerIdx); // Sinó passa al següent que no hagi passat
                 }
 
                 R.logs = R.logs.slice(-60);
@@ -1027,11 +1040,9 @@
                 const lastIdx = last ? R.players.indexOf(last) : -1;
 
                 if (last && !last.finished && eligible.length === 1 && eligible[0].id === last.id) {
-                    // Si tothom menys l'últim que ha tirat ha passat
                     clearTable(R, `🧹 <i>Tothom ha passat! Surt <b>${esc(last.name)}</b>.</i>`);
                     R.currentPlayerIndex = lastIdx;
                 } else if (eligible.length === 0) {
-                    // Si absolutament tothom ha passat o acabat
                     clearTable(R, '🧹 <i>Tothom ha passat. La taula es neteja.</i>');
                     R.currentPlayerIndex = nextActive(R.players, lastIdx > -1 ? lastIdx : playerIdx);
                 } else {
@@ -1046,7 +1057,6 @@
             const groups = {};
             bot.hand.forEach((c) => { (groups[c.rank] = groups[c.rank] || []).push(c); });
 
-            // Prioritat al Pòquer
             const pokerRank = RANKS.find((r) => groups[r] && groups[r].length === 4);
             if (pokerRank) return { cards: groups[pokerRank], det: { valid: true, type: 'poker', isPokerWin: true, isBling: false } };
 
@@ -1056,7 +1066,6 @@
             for (const r of RANKS) {
                 const g = groups[r];
                 if (!g) continue;
-                // Busca combinacions del mateix tamany que la taula (o màxim 3 si obre)
                 const size = table ? table.cards.length : Math.min(g.length, 3);
                 if (g.length < size) continue;
                 
@@ -1066,7 +1075,6 @@
             }
             
             if (!moves.length) {
-                // Si la taula està bloquejada per l'oponent però tenim un 2♥, i NO estem a punt d'acabar (per no ser Culo)
                 const h2 = bot.hand.find(HEART2);
                 if (table && h2 && bot.hand.length > 1) {
                     const det = validatePlay([h2], R);
@@ -1075,13 +1083,11 @@
                 return null;
             }
 
-            // Filtrar tirades que farien acabar amb el 2♥ i convertir al bot en Culo
             const losesWithHeart2 = (m) => m.cards.length === bot.hand.length && m.cards.some(HEART2);
             const safe = moves.filter((m) => !losesWithHeart2(m));
             
-            const pool = safe.length ? safe : (table ? [] : moves); // Si no hi ha opcions segures i estem obrint, millor tirar un altre.
+            const pool = safe.length ? safe : (table ? [] : moves); 
             
-            // Preferència per guardar els 2 fins el final
             const non2 = pool.filter((m) => m.cards[0].rank !== '2');
             return (non2.length ? non2 : pool)[0] || null;
         }
@@ -1128,27 +1134,22 @@
 
             R.exchange = [];
             
-            // Regles oficials d'intercanvi Culo
             if (culo && president) {
-                // El Culo dóna les seves 2 millors cartes
                 const best = culo.hand.splice(-2, 2);
                 president.hand.push(...best);
-                // El President haurà d'escollir quines 2 donar
                 R.exchange.push({ fromId: president.id, toId: culo.id, count: 2 });
                 R.logs.push(`🔄 <b>${esc(culo.name)}</b> (Culo) ha entregat les seves 2 millors cartes a <b>${esc(president.name)}</b>.`);
             }
             if (viceculo && vice) {
-                // El Viceculo dóna la seva millor carta
                 const best = viceculo.hand.splice(-1, 1);
                 vice.hand.push(...best);
-                // El Vicepresident haurà d'escollir quina donar
                 R.exchange.push({ fromId: vice.id, toId: viceculo.id, count: 1 });
                 R.logs.push(`🔄 <b>${esc(viceculo.name)}</b> (Viceculo) ha entregat la seva millor carta a <b>${esc(vice.name)}</b>.`);
             }
             
             R.players.forEach((p) => sortHand(p.hand));
             R.state = 'EXCHANGING';
-            R.starterId = president ? president.id : null; // Qui ha guanyat (President) començarà
+            R.starterId = president ? president.id : null;
             R.ranking = [];
             R.logs.push(`<b>S'inicia la Ronda ${R.roundNumber}!</b> Fase d'intercanvi de cartes obligatori.`);
             R.logs = R.logs.slice(-60);
@@ -1178,14 +1179,13 @@
                 R.exchange = (R.exchange || []).filter((e) => {
                     const from = R.players.find((p) => p.id === e.fromId);
                     if (from && from.isBot) {
-                        giveCards(R, e, from.hand.slice(0, e.count)); // El bot dóna automàticament les més baixes (pitjors)
+                        giveCards(R, e, from.hand.slice(0, e.count));
                         changed = true;
                         return false;
                     }
                     return true;
                 });
                 
-                // Si no queden intercanvis pendents
                 if (R.exchange.length === 0) { 
                     startPlay(R); 
                     changed = true; 
@@ -1246,7 +1246,7 @@
                 exchangeSelected = [];
                 exchangeBuiltKey = null;
                 
-                if (R.exchange.length === 0) startPlay(R); // Tots han intercanviat, comencem
+                if (R.exchange.length === 0) startPlay(R);
                 
                 $('exchange-modal').classList.add('hidden');
                 await backend.set(roomCode, R);
@@ -1288,7 +1288,8 @@
             $('opponents-container').innerHTML = '';
             $('human-hand').innerHTML = '';
             $('action-log').innerHTML = '';
-            $('table-info').innerText = '';
+            $('table-info').innerText = '-';
+            $('table-info').classList.add('opacity-0');
             $('reverse-indicator').classList.add('hidden');
             $('table-cards').innerHTML = '<span class="text-emerald-300/50 text-sm font-semibold italic">Esperant la primera tirada...</span>';
             $('btn-play').disabled = true;
@@ -1330,7 +1331,6 @@
         $('btn-rules-header').addEventListener('click', openRules);
         $('btn-close-rules').addEventListener('click', () => $('rules-modal').classList.add('hidden'));
 
-        // Inicialització en carregar
         initBackend();
     </script>
 </body>
