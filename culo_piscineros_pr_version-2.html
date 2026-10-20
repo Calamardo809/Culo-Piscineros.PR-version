@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Culo Piscineros.PR version</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at center, #144723 0%, #081e0e 100%);
+            color: #ffffff;
+            user-select: none;
+            touch-action: manipulation;
+            overflow-x: hidden;
+        }
+
+        /* Disseny de la carta */
+        .playing-card {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            aspect-ratio: 2.5 / 3.5;
+            background-color: white;
+        }
+
+        .playing-card:hover:not(.disabled) {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.7);
+        }
+
+        .playing-card.selected {
+            transform: translateY(-18px) scale(1.08);
+            border: 3px solid #f59e0b !important;
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.9);
+            z-index: 10;
+        }
+
+        .card-red { color: #dc2626; }
+        .card-black { color: #111827; }
+
+        /* Taula de joc gegant */
+        .casino-table {
+            background: radial-gradient(circle at center, #0f4c23 0%, #062b11 100%);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
+            border: 4px solid #10b981;
+        }
+
+        /* Animació BLING! */
+        @keyframes blingPop {
+            0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+            50% { transform: scale(1.4) rotate(12deg); opacity: 1; }
+            70% { transform: scale(0.9) rotate(-5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .bling-animation {
+            animation: blingPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-2 md:p-4">
+
+    <!-- OVERLAY D'ANIMACIÓ BLING! -->
+    <div id="bling-overlay" class="fixed inset-0 pointer-events-none z-50 flex items-center justify-center hidden">
+        <div class="relative flex items-center justify-center">
+            <svg class="w-72 h-72 md:w-96 md:h-96 drop-shadow-[0_0_40px_rgba(251,191,36,1)] bling-animation" viewBox="0 0 24 24" fill="#fbbf24" stroke="#d97706" stroke-width="0.5">
+                <path d="M12 1.7l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 1.7z"/>
+            </svg>
+            <div class="absolute font-black text-5xl md:text-7xl text-gray-950 tracking-extrabold rotate-[-6deg] drop-shadow-lg border-b-4 border-amber-600 pb-1 bling-animation">
+                BLING!
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LOBBY ONLINE -->
+    <div id="lobby-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-40">
+        <div class="bg-gray-900 border border-amber-500/40 rounded-3xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl">
+            <h1 class="text-3xl font-black text-amber-400 mb-2">🃏 El Culo</h1>
+            <p class="text-xs md:text-sm text-gray-300 mb-6 font-bold uppercase tracking-wider">Versió Piscineros PR</p>
+            
+            <div class="mb-5 text-left">
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-2">El teu Nom:</label>
+                <input id="input-player-name" type="text" maxlength="12" placeholder="Escriu el teu nom..." class="w-full bg-black/60 border-2 border-white/20 rounded-xl px-4 py-3 text-amber-300 font-bold focus:outline-none focus:border-amber-400 text-sm transition">
+            </div>
+
+            <div id="lobby-initial-actions" class="space-y-4">
+                <button id="btn-show-create" class="w-full bg-amber-500 hover:bg-amber-400 text-gray-950 font-black py-3.5 rounded-xl transition shadow-lg uppercase tracking-wide text-sm">
+                    👑 Crear Sala Nova
+                </button>
+                <div class="flex items-center gap-2 my-2">
+                    <hr class="flex-1 border-white/10">
+                    <span class="text-[10px] text-gray-400 uppercase font-bold">o uneix-te a una existent</span>
+                    <hr class="flex-1 border-white/10">
+                </div>
+                <div class="flex gap-2">
+                    <input id="input-room-code" type="text" maxlength="5" placeholder="CODI" class="w-1/2 uppercase bg-black/60 border-2 border-white/20 rounded-xl px-3 py-3 text-center text-amber-300 font-black tracking-widest focus:outline-none focus:border-amber-400 text-lg transition">
+                    <button id="btn-join-room" class="w-1/2 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition shadow-lg text-sm uppercase">
+                        Entrar
+                    </button>
+                </div>
+                <button id="btn-rules-lobby" class="w-full bg-gray-800 hover:bg-gray-700 text-amber-300 font-bold py-2.5 rounded-xl border border-white/10 text-xs mt-4">📖 Llegir Regles del Joc</button>
+            </div>
+
+            <!-- DINTRE DE LA SALA -->
+            <div id="lobby-room-waiting" class="hidden text-left space-y-5">
+                <div class="bg-black/60 border border-amber-500/50 p-4 rounded-2xl flex justify-between items-center shadow-inner">
+                    <div>
+                        <span class="text-[10px] font-bold text-amber-400/80 uppercase block mb-1">Codi per convidar amics:</span>
+                        <span id="display-room-code" class="text-4xl font-black text-amber-400 tracking-widest drop-shadow-md">---</span>
+                    </div>
+                    <button id="btn-copy-code" class="bg-gray-800 hover:bg-gray-700 text-xs px-4 py-2 rounded-xl border border-white/10 font-bold text-amber-300 transition">
+                        📋 Copiar
+                    </button>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-gray-400 uppercase">Jugadors Preparats:</span>
+                        <span id="player-count-badge" class="text-sm font-black text-emerald-400">1/8</span>
+                    </div>
+                    <div id="players-waiting-list" class="space-y-2 max-h-40 overflow-y-auto bg-black/40 p-2 rounded-xl border border-white/10 text-sm"></div>
+                </div>
+
+                <div id="host-controls" class="space-y-3 mt-4">
+                    <button id="btn-add-bot" class="w-full bg-indigo-900/80 hover:bg-indigo-800 text-indigo-100 font-bold py-2.5 rounded-xl border border-indigo-500/30 text-xs transition">
+                        🤖 Afegir Bot IA per omplir
+                    </button>
+                    <button id="btn-start-online-game" class="w-full bg-amber-500 hover:bg-amber-400 text-gray-950 font-black py-4 rounded-xl transition shadow-[0_0_15px_rgba(245,158,11,0.5)] text-sm uppercase tracking-wider">
+                        ▶ Començar Partida!
+                    </button>
+                </div>
+                <div id="guest-waiting-msg" class="hidden text-center text-sm font-bold text-amber-300/80 animate-pulse py-4">
+                    Esperant que l'anfitrió comenci la partida...
+                </div>
+                <button id="btn-leave-lobby" class="w-full bg-red-900/70 hover:bg-red-800 text-red-100 font-bold py-2 rounded-xl border border-red-500/30 text-xs mt-2">🏠 Sortir i tornar al menú</button>
+            </div>
+            <div id="connection-warning" class="mt-4 text-[10px] text-gray-500 italic"></div>
+        </div>
+    </div>
+
+    <!-- CAPÇALERA -->
+    <header class="flex justify-between items-center bg-black/60 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 mb-3 shadow-lg">
+        <div class="flex items-center space-x-2">
+            <span class="text-3xl drop-shadow-md">🃏</span>
+            <h1 class="text-xl md:text-2xl font-black tracking-wide text-amber-400 drop-shadow-md">Culo <span class="text-emerald-400 text-sm uppercase font-bold">Online</span></h1>
+        </div>
+        <div class="flex items-center gap-2 md:gap-3">
+            <button id="btn-rules-header" class="text-xs bg-black/60 hover:bg-black/80 px-3 py-1.5 rounded-full border border-white/20 font-bold text-amber-300 transition">📖 Regles</button>
+            <button id="btn-menu" class="text-xs bg-red-900/70 hover:bg-red-800 px-3 py-1.5 rounded-full border border-red-500/30 font-bold text-red-100 transition">🏠 Menú</button>
+            <span id="room-id-badge" class="hidden md:inline-block text-xs bg-black/80 px-3 py-1.5 rounded-full border border-white/20 font-mono text-amber-300 font-bold">Sala: -</span>
+            <span id="round-display" class="text-xs md:text-sm bg-emerald-600 px-4 py-1.5 rounded-full border border-emerald-400 text-white font-black shadow-md">Ronda 1</span>
+        </div>
+    </header>
+
+    <!-- TAULA DE JOC -->
+    <main class="flex-1 flex flex-col justify-between max-w-7xl w-full mx-auto relative my-1 gap-2">
+        
+        <!-- OPONENTS -->
+        <div id="opponents-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3 mb-2"></div>
+
+        <!-- TAULA CENTRAL (MÉS GRAN I VISIBLE) -->
+        <div class="flex-1 min-h-[280px] md:min-h-[350px] casino-table rounded-[2rem] p-6 md:p-10 relative flex flex-col items-center justify-center my-2">
+            <div class="absolute top-4 left-0 right-0 flex justify-center items-center gap-3">
+                <span class="text-xs md:text-sm font-black text-emerald-400/80 uppercase tracking-[0.2em] bg-black/50 px-4 py-1 rounded-full border border-emerald-500/30">Taula Central</span>
+                <span id="reverse-indicator" class="hidden text-[10px] md:text-xs font-black bg-amber-500 text-gray-900 border-2 border-amber-300 px-3 py-1 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.6)] animate-bounce">
+                    🔻 REGLA DEL 8 ACTIVA (Només iguals o menors!)
+                </span>
+            </div>
+            
+            <div id="table-cards" class="flex flex-wrap justify-center gap-4 my-6 min-h-[140px] items-center">
+                <span class="text-emerald-300/50 text-sm md:text-base font-semibold italic">La taula està neta. Esperant la tirada...</span>
+            </div>
+
+            <div id="table-info" class="absolute bottom-4 text-sm md:text-base font-bold text-amber-300 bg-black/60 px-6 py-1.5 rounded-full border border-amber-500/30"></div>
+        </div>
+
+        <!-- HISTORIAL I CONTROLS -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4 items-stretch mt-2">
+            <!-- HISTORIAL -->
+            <div class="lg:col-span-1 bg-black/70 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col h-40 lg:h-auto shadow-lg">
+                <div class="text-xs md:text-sm font-black text-amber-400 mb-2 flex justify-between items-center border-b border-white/10 pb-2">
+                    <span>📜 Historial en Viu</span>
+                </div>
+                <div id="action-log" class="flex-1 overflow-y-auto text-[11px] md:text-xs space-y-1.5 text-gray-300 pr-2"></div>
+            </div>
+
+            <!-- CARTES DE L'HUMÀ -->
+            <div class="lg:col-span-3 bg-black/80 backdrop-blur-md border border-amber-500/30 rounded-3xl p-4 md:p-5 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+                <!-- Brillo de fons pel torn -->
+                <div id="turn-glow" class="absolute inset-0 bg-amber-500/5 opacity-0 transition-opacity duration-500 pointer-events-none"></div>
+
+                <div class="flex flex-wrap justify-between items-center pb-3 border-b border-white/10 mb-3 relative z-10 gap-2">
+                    <div class="flex items-center gap-2 md:gap-3">
+                        <span id="my-player-name-display" class="font-black text-amber-400 text-base md:text-lg drop-shadow-md">👤 Tu:</span>
+                        <span id="player-role-badge" class="text-[10px] md:text-xs font-black px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 hidden"></span>
+                        <span id="player-status-badge" class="text-xs md:text-sm px-3 py-1 rounded-full font-bold bg-gray-800 text-gray-400 border border-white/10 transition-all">Esperant...</span>
+                    </div>
+                    <div class="flex gap-3 w-full md:w-auto">
+                        <button id="btn-pass" class="flex-1 md:flex-none bg-red-600/90 hover:bg-red-500 text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow-lg disabled:opacity-30 disabled:cursor-not-allowed">
+                            Passar Torn
+                        </button>
+                        <button id="btn-play" class="flex-1 md:flex-none bg-amber-500 hover:bg-amber-400 text-gray-950 font-black text-sm px-8 py-3 rounded-xl transition shadow-[0_4px_15px_rgba(245,158,11,0.4)] disabled:opacity-30 disabled:shadow-none disabled:cursor-not-allowed">
+                            Tirar Cartes
+                        </button>
+                    </div>
+                </div>
+
+                <div id="human-hand" class="flex flex-wrap justify-center gap-2 md:gap-3 py-3 min-h-[140px] max-h-[240px] overflow-y-auto relative z-10"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL INTERCANVI -->
+    <div id="exchange-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
+        <div class="bg-gray-900 border-2 border-amber-500/50 rounded-3xl p-6 md:p-8 max-w-xl w-full text-center shadow-[0_0_50px_rgba(245,158,11,0.2)]">
+            <h2 id="exchange-title" class="text-2xl font-black text-amber-400 mb-2">🔄 Fase d'Intercanvi Obligatori</h2>
+            <p id="exchange-desc" class="text-sm text-gray-300 mb-6 font-medium bg-black/40 p-3 rounded-lg border border-white/10"></p>
+            <div id="exchange-cards-container" class="flex flex-wrap justify-center gap-3 my-4 max-h-64 overflow-y-auto p-4 border border-white/10 rounded-2xl bg-black/50 shadow-inner"></div>
+            <button id="btn-confirm-exchange" disabled class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black py-4 rounded-xl transition text-sm uppercase tracking-wider disabled:opacity-40 mt-4 shadow-lg">
+                Confirmar i Entregar Cartes
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL FI DE RONDA -->
+    <div id="end-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
+        <div class="bg-gray-900 border-2 border-amber-500/50 rounded-3xl p-6 md:p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(245,158,11,0.2)]">
+            <h2 id="end-title" class="text-3xl font-black text-amber-400 mb-1">👑 Fi de la Ronda!</h2>
+            <p class="text-xs text-gray-400 uppercase font-bold mb-6">Classificació Oficial</p>
+            <div id="end-rankings" class="space-y-3 mb-8 text-left text-sm text-gray-200 bg-black/40 p-4 rounded-2xl border border-white/5"></div>
+            <button id="btn-next-round" class="w-full bg-amber-500 hover:bg-amber-400 text-gray-950 font-black py-4 rounded-xl transition uppercase tracking-wider text-sm hidden shadow-lg">
+                Iniciar Següent Ronda
+            </button>
+            <div id="guest-next-round-msg" class="text-sm font-bold text-amber-300/80 animate-pulse bg-black/50 py-3 rounded-xl">
+                Esperant que l'anfitrió iniciï la ronda...
+            </div>
+            <button id="btn-end-menu" class="w-full mt-4 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold py-3 rounded-xl border border-white/10 text-xs transition">🏠 Tornar al menú principal</button>
+        </div>
+    </div>
+
+    <!-- MODAL REGLES -->
+    <div id="rules-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-900 border border-amber-500/50 rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl max-h-[90vh] flex flex-col">
+            <h2 class="text-2xl font-black text-amber-400 mb-4 text-center border-b border-white/10 pb-3">📖 Regles del Joc del Culo</h2>
+            <ul class="overflow-y-auto text-sm text-gray-200 space-y-4 pr-2 list-none custom-scrollbar">
+                <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">🎯</span> <b>Objectiu:</b> Quedar-te sense cartes el primer. L'ordre d'arribada defineix el teu títol: 👑 President, 🥈 Vicepresident, 😐 Neutre, 💩 Viceculo i 🤡 Culo.</li>
+                <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">🃏</span> <b>Ordre de les cartes:</b> El 3 és la més baixa, l'A és alta, i el <b>2 és la carta invencible</b>.</li>
+                <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">📏</span> <b>Jugades:</b> Pots tirar 1, 2 o 3 cartes del mateix valor. Els següents jugadors han de respectar el mateix nombre de cartes, i tirar un valor <b>igual o superior</b>.</li>
+                <li class="bg-amber-900/30 p-3 rounded-xl border border-amber-500/20 text-amber-100"><span class="text-xl">⚠️</span> <b>El 7:</b> Després d'un 7 a la taula, el següent jugador <b>només pot tirar un 7 o un 8</b>.</li>
+                <li class="bg-amber-900/30 p-3 rounded-xl border border-amber-500/20 text-amber-100"><span class="text-xl">🔻</span> <b>El 8:</b> Si tires un 8, obligues al següent jugador a tirar <b>cartes IGUALS O MENORS a 8</b>. Aquesta condició s'aplica només a la següent tirada. Si responen amb un 5, el següent ja juga normal superant el 5.</li>
+                <li class="bg-emerald-900/30 p-3 rounded-xl border border-emerald-500/20 text-emerald-100"><span class="text-xl">🧹</span> <b>El 2 de Cors (2♥):</b> Tirat de forma <b>individual</b>, neteja la taula al instant (encara que hi hagués dobles o trios) i et permet tornar a sortir. La resta de 2 només són cartes altes normals.</li>
+                <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">⭐</span> <b>BLING!:</b> Si tires una carta del mateix valor que l'anterior, fas efecte BLING!</li>
+                <li class="bg-blue-900/30 p-3 rounded-xl border border-blue-500/20 text-blue-100"><span class="text-xl">💥</span> <b>Pòquer (4 iguals):</b> Si tires 4 cartes iguals de cop, guanyes la teva posició a l'instant i acabes de jugar.</li>
+                <li class="bg-red-900/30 p-3 rounded-xl border border-red-500/20 text-red-100"><span class="text-xl">🤡</span> <b>Penalització 2♥ final:</b> Queda totalment prohibit acabar la partida tirant el 2♥ com a última carta. Si ho fas, passes a ser el Culo directe.</li>
+                <li class="bg-black/40 p-3 rounded-xl border border-white/5"><span class="text-xl">⏸️</span> <b>Passar:</b> Si decideixes passar el teu torn, no podràs tornar a tirar fins que es netegi la taula i comenci una ronda nova des de zero.</li>
+                <li class="bg-purple-900/30 p-3 rounded-xl border border-purple-500/20 text-purple-100"><span class="text-xl">🔄</span> <b>Intercanvi de Ronda:</b> El Culo està obligat a donar les seves 2 millors cartes al President (que li'n torna 2 de dolentes). El Viceculo dona la millor al Vicepresident (i rep 1 a canvi).</li>
+            </ul>
+            <button id="btn-close-rules" class="mt-6 bg-amber-500 hover:bg-amber-400 text-gray-950 font-black px-8 py-3 rounded-xl text-sm uppercase tracking-wider self-center shadow-lg transition">Entès, a jugar!</button>
+        </div>
+    </div>
+
+    <!-- MODAL MISSATGE ERROR -->
+    <div id="msg-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-900 border-2 border-red-500/50 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
+            <div class="text-4xl mb-3">⚠️</div>
+            <p id="msg-text" class="text-sm font-bold text-gray-200 mb-6 leading-relaxed"></p>
+            <button id="btn-close-msg" class="bg-white hover:bg-gray-200 text-gray-900 font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider transition">
+                D'acord
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        const SUITS = ['♥️', '♦️', '♠️', '♣️'];
+        const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
+        const HEART2 = (c) => c.rank === '2' && c.suit === '♥️';
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const clone = (o) => JSON.parse(JSON.stringify(o));
+
+        let myUserId = null;
+        let myPlayerName = 'Jugador';
+        let roomCode = null;
+        let isHost = false;
+        let roomData = null;
+        let unsubscribe = null;
+        let backend = null;
+        let selected = [];
+        let exchangeSelected = [];
+        let exchangeBuiltKey = null;
+        let lastBlingSeen = null;
+        let botTimer = null;
+        let busy = false;
+
+        function newLocalId() {
+            return 'u_' + Math.random().toString(36).slice(2, 10);
+        }
+
+        // BACKEND DE FALLBACK (Només per provar en el mateix navegador si PeerJS falla)
+        function createLocalBackend() {
+            try {
+                myUserId = sessionStorage.getItem('culo_uid') || newLocalId();
+                sessionStorage.setItem('culo_uid', myUserId);
+            } catch (e) { myUserId = newLocalId(); }
+
+            const mem = {};
+            const subs = {};
+            const k = (c) => 'culo_room_' + c;
+            const read = (c) => {
+                try { const v = localStorage.getItem(k(c)); return v ? JSON.parse(v) : null; }
+                catch (e) { return mem[c] ? clone(mem[c]) : null; }
+            };
+            const write = (c, d) => {
+                try { localStorage.setItem(k(c), JSON.stringify(d)); }
+                catch (e) { mem[c] = clone(d); }
+            };
+            const notify = (c) => (subs[c] || []).forEach((f) => f(read(c)));
+            window.addEventListener('storage', (e) => {
+                if (e.key && e.key.startsWith('culo_room_')) notify(e.key.slice('culo_room_'.length));
+            });
+            return {
+                mode: 'local',
+                get: async (c) => read(c),
+                set: async (c, d) => { write(c, d); notify(c); },
+                update: async (c, p) => { write(c, Object.assign(read(c) || {}, p)); notify(c); },
+                sub: (c, cb) => {
+                    (subs[c] = subs[c] || []).push(cb);
+                    cb(read(c));
+                    return () => { subs[c] = subs[c].filter((f) => f !== cb); };
+                }
+            };
+        }
+
+        // BACKEND MULTIJUAGDOR P2P VIA PEERJS
+        const PEER_PREFIX = 'culopr-';
+
+        function createPeerBackend() {
+            try {
+                myUserId = sessionStorage.getItem('culo_uid') || newLocalId();
+                sessionStorage.setItem('culo_uid', myUserId);
+            } catch (e) { myUserId = newLocalId(); }
+
+            let peer = null, conns = [], hostConn = null, state = null, cb = null, hosting = false;
+            const api = { mode: 'peer', onPlayerLeft: null, onHostLost: null, lastError: '' };
+            const emit = () => { if (cb && state) cb(clone(state)); };
+            const broadcast = () => conns.forEach((c) => { if (c.open) c.send({ t: 'state', d: state }); });
+            
+            const openPeer = (id) => new Promise((resolve, reject) => {
+                const p = id ? new window.Peer(id) : new window.Peer();
+                const timer = setTimeout(() => { try { p.destroy(); } catch (e) {} reject(new Error('timeout')); }, 12000);
+                p.on('open', () => { clearTimeout(timer); resolve(p); });
+                p.on('error', (err) => { clearTimeout(timer); reject(err); });
+                p.on('disconnected', () => { try { if (!p.destroyed) p.reconnect(); } catch (e) {} });
+            });
+
+            api.host = async () => {
+                api.leave();
+                for (let i = 0; i < 6; i++) {
+                    const code = Math.random().toString(36).slice(2, 7).toUpperCase();
+                    try { peer = await openPeer(PEER_PREFIX + code); }
+                    catch (e) { if (e && e.type === 'unavailable-id') continue; api.lastError = e.message || 'error desconegut'; throw e; }
+                    hosting = true;
+                    peer.on('connection', (c) => {
+                        conns.push(c);
+                        c.on('open', () => c.send({ t: 'state', d: state }));
+                        c.on('data', (m) => {
+                            if (!m || !state) return;
+                            if (m.t === 'hello') c.playerId = m.id;
+                            else if (m.t === 'set') { state = m.d; broadcast(); emit(); }
+                            else if (m.t === 'update') { state = Object.assign(state, m.p); broadcast(); emit(); }
+                            else if (m.t === 'join') {
+                                if (state.state === 'LOBBY' && state.players.length < 8 && !state.players.some((x) => x.id === m.p.id)) {
+                                    state.players.push(m.p);
+                                    state.logs.push(m.log);
+                                }
+                                broadcast(); emit();
+                            }
+                        });
+                        c.on('close', () => {
+                            conns = conns.filter((x) => x !== c);
+                            if (c.playerId && api.onPlayerLeft) api.onPlayerLeft(c.playerId);
+                        });
+                    });
+                    return code;
+                }
+                throw new Error('no-code');
+            };
+
+            api.get = async (code) => {
+                api.leave();
+                try { peer = await openPeer(); } catch (e) { api.lastError = e.message || 'error'; return null; }
+                const myPeer = peer;
+                return new Promise((resolve) => {
+                    let done = false, timer = null;
+                    const finish = (v) => { if (!done) { done = true; clearTimeout(timer); resolve(v); } };
+                    const fail = () => { if (!done) { try { myPeer.destroy(); } catch (e) {} if (peer === myPeer) peer = null; finish(null); } };
+                    timer = setTimeout(() => { api.lastError = 'timeout connectant al host'; fail(); }, 15000);
+                    
+                    const conn = myPeer.connect(PEER_PREFIX + code, { reliable: true, serialization: 'json' });
+                    conn.on('open', () => { conn.send({ t: 'hello', id: myUserId }); });
+                    conn.on('data', (m) => {
+                        if (!m || m.t !== 'state') return;
+                        state = m.d;
+                        if (!done) { hostConn = conn; finish(clone(state)); } else emit();
+                    });
+                    conn.on('error', fail);
+                    conn.on('close', () => {
+                        if (done && hostConn === conn) { hostConn = null; if (api.onHostLost) api.onHostLost(); }
+                    });
+                });
+            };
+
+            api.set = async (c, d) => {
+                state = clone(d);
+                if (hosting) broadcast();
+                else if (hostConn) hostConn.send({ t: 'set', d: state });
+                emit();
+            };
+            api.update = async (c, p) => {
+                state = Object.assign(state || {}, p);
+                if (hosting) broadcast();
+                else if (hostConn) hostConn.send({ t: 'update', p });
+                emit();
+            };
+            api.addPlayer = async (c, p, log) => { if (hostConn) hostConn.send({ t: 'join', p, log }); };
+            api.sub = (c, f) => { cb = f; if (state) f(clone(state)); return () => { cb = null; }; };
+            api.leave = () => {
+                const cs = conns; conns = []; hostConn = null; state = null; cb = null; hosting = false;
+                try { cs.forEach((x) => x.close()); } catch (e) {}
+                try { if (peer) peer.destroy(); } catch (e) {}
+                peer = null;
+            };
+            return api;
+        }
+
+        async function initBackend() {
+            backend = window.Peer ? createPeerBackend() : createLocalBackend();
+            backend.onPlayerLeft = handlePlayerLeft;
+            backend.onHostLost = () => { leaveRoom(); showMessage("Connexió perduda amb l'anfitrió de la sala."); };
+            
+            const hint = "Comprova la connexió a internet o que cap tallafoc bloquegi WebRTC.";
+            $('connection-warning').innerText = backend.mode === 'peer' 
+                ? "Connexió P2P (PeerJS) carregada correctament. Pots jugar online." 
+                : "No s'ha pogut carregar el multijugador online. Jugant en mode Local.";
+        }
+
+        const commit = (patch) => backend.update(roomCode, patch);
+
+        function showMessage(text) {
+            $('msg-text').innerText = text;
+            $('msg-modal').classList.remove('hidden');
+        }
+
+        function playBlingSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.35);
+            } catch (e) {}
+        }
+
+        function triggerBlingAnimation() {
+            playBlingSound();
+            const overlay = $('bling-overlay');
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.add('hidden'), 1200);
+        }
+
+        const rankIdx = (card) => RANKS.indexOf(card.rank);
+
+        function createDeck() {
+            const deck = [];
+            for (const suit of SUITS) for (const rank of RANKS) deck.push({ rank, suit });
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            return deck;
+        }
+
+        function sortHand(hand) {
+            hand.sort((a, b) => rankIdx(a) - rankIdx(b) || SUITS.indexOf(a.suit) - SUITS.indexOf(b.suit));
+        }
+
+        function dealTo(players) {
+            const deck = createDeck();
+            players.forEach((p) => { p.hand = []; p.finished = false; p.finishOrder = null; p.passed = false; });
+            let i = 0;
+            while (deck.length) players[i++ % players.length].hand.push(deck.pop());
+            players.forEach((p) => sortHand(p.hand));
+        }
+
+        function titleFor(idx, n) {
+            if (idx === 0) return ['PRESIDENT', '👑 PRESIDENT'];
+            if (idx === 1) return ['VICEPRESIDENT', '🥈 VICEPRESIDENT'];
+            if (idx === n - 2) return ['VICECULO', '💩 VICECULO'];
+            if (idx === n - 1) return ['CULO', '🤡 CULO'];
+            return ['NEUTRE', '😐 NEUTRE'];
+        }
+
+        function newPlayer(id, name, isBot) {
+            return { id, name, isBot, hand: [], finished: false, finishOrder: null, title: '', titleCode: 'NEUTRE', passed: false };
+        }
+
+        function nextEligible(players, from) {
+            let i = from;
+            for (let n = 0; n < players.length; n++) {
+                i = (i + 1) % players.length;
+                if (!players[i].finished && !players[i].passed) return i;
+            }
+            return -1;
+        }
+
+        function clearTable(R, msg) {
+            R.tableCombination = null;
+            R.lastPlayerId = null;
+            R.consecutivePasses = 0;
+            R.players.forEach((p) => { p.passed = false; });
+            if (msg) R.logs.push(msg);
+        }
+
+        function nextActive(players, from) {
+            let i = from;
+            do { i = (i + 1) % players.length; } while (players[i].finished);
+            return i;
+        }
+
+        function readName() {
+            const n = $('input-player-name').value.trim();
+            if (!n) { showMessage('Si us plau, escriu el teu nom primer!'); return null; }
+            return n;
+        }
+
+        async function createRoom() {
+            const name = readName();
+            if (!name || !backend) return;
+            myPlayerName = name;
+            const btn = $('btn-show-create');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Connectant al servidor...';
+            
+            let code;
+            try { 
+                code = backend.host ? await backend.host() : Math.random().toString(36).slice(2, 7).toUpperCase(); 
+            } catch (e) { 
+                btn.disabled = false; 
+                btn.innerHTML = originalText;
+                showMessage("No s'ha pogut crear la sala online. Comprova la connexió o desactiva l'extensió de bloqueig."); 
+                return; 
+            }
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            roomCode = code;
+            isHost = true;
+            
+            await backend.set(code, {
+                code,
+                hostId: myUserId,
+                state: 'LOBBY',
+                roundNumber: 1,
+                players: [newPlayer(myUserId, name, false)],
+                currentPlayerIndex: 0,
+                tableCombination: null,
+                consecutivePasses: 0,
+                finishOrderCounter: 1,
+                lastPlayerId: null,
+                blingSeq: 0,
+                exchange: [],
+                ranking: [],
+                starterId: null,
+                logs: [`Sala creada per ${esc(name)}.`]
+            });
+            listenRoom(code);
+        }
+
+        async function joinRoom() {
+            const name = readName();
+            const code = $('input-room-code').value.trim().toUpperCase();
+            if (!name) return;
+            if (!code) { showMessage('Has d\'escriure el codi de la sala per entrar!'); return; }
+            myPlayerName = name;
+
+            const btn = $('btn-join-room');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳...';
+
+            const room = await backend.get(code);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+
+            if (!room) { 
+                showMessage('No s\'ha trobat aquesta sala. Assegura\'t que l\'anfitrió la té oberta i el codi és correcte.'); 
+                return; 
+            }
+
+            const already = room.players.some((p) => p.id === myUserId);
+            if (!already) {
+                if (room.state !== 'LOBBY') { showMessage('Massa tard, la partida ja ha començat!'); return; }
+                if (room.players.length >= 8) { showMessage('La sala està plena (màxim 8 jugadors).'); return; }
+                
+                const me = newPlayer(myUserId, name, false);
+                const log = `${esc(name)} s'ha unit a la sala.`;
+                if (backend.addPlayer) {
+                    await backend.addPlayer(code, me, log);
+                    room.players.push(me);
+                } else {
+                    room.players.push(me);
+                    room.logs.push(log);
+                    await backend.update(code, { players: room.players, logs: room.logs });
+                }
+            }
+            roomCode = code;
+            isHost = room.hostId === myUserId;
+            listenRoom(code);
+        }
+
+        async function addBot() {
+            if (!isHost || !roomData) return;
+            if (roomData.players.length >= 8) { showMessage('Ja heu arribat al màxim de jugadors!'); return; }
+            const names = ['Enric', 'Anna', 'Marc', 'Laia', 'Pau', 'Jordi', 'Marta', 'Núria'];
+            const n = roomData.players.filter((p) => p.isBot).length;
+            const name = 'Bot ' + names[n % names.length];
+            const players = clone(roomData.players);
+            players.push(newPlayer('bot_' + Date.now() + '_' + Math.floor(Math.random() * 1e6), name, true));
+            const logs = [...roomData.logs, `Afegit el ${name} a la sala.`];
+            await commit({ players, logs });
+        }
+
+        function listenRoom(code) {
+            if (unsubscribe) unsubscribe();
+            lastBlingSeen = null;
+            unsubscribe = backend.sub(code, (data) => {
+                if (!data) return;
+                roomData = data;
+                renderRoomState();
+            });
+        }
+
+        function startPlay(R, announce = true) {
+            let starter = 0;
+            const winnerIdx = R.starterId ? R.players.findIndex((p) => p.id === R.starterId) : -1;
+            if (winnerIdx > -1) starter = winnerIdx;
+            else R.players.forEach((p, i) => { if (p.hand.some((c) => c.rank === '3' && c.suit === '♥️')) starter = i; });
+            
+            R.starterId = null;
+            R.state = 'PLAYING';
+            R.exchange = [];
+            R.currentPlayerIndex = starter;
+            R.tableCombination = null;
+            R.consecutivePasses = 0;
+            R.finishOrderCounter = 1;
+            R.lastPlayerId = null;
+            R.players.forEach((p) => { p.passed = false; });
+            
+            if (announce) R.logs.push(winnerIdx > -1
+                ? `👑 <b>${esc(R.players[starter].name)}</b> comença la nova ronda!`
+                : `🌟 <b>${esc(R.players[starter].name)}</b> té el <b>3♥️</b> i comença la partida!`);
+        }
+
+        async function startOnlineGame() {
+            if (!isHost || !roomData) return;
+            if (roomData.players.length < 3) { showMessage('Es necessiten un mínim de 3 jugadors (pots afegir bots).'); return; }
+            const R = clone(roomData);
+            dealTo(R.players);
+            R.starterId = null;
+            R.logs.push(`<b>S'inicia la Ronda ${R.roundNumber}!</b>`);
+            startPlay(R);
+            await backend.set(roomCode, R);
+        }
+
+        function renderRoomState() {
+            if (!roomData) return;
+            const R = roomData;
+            $('room-id-badge').innerText = `Sala: ${R.code}`;
+            $('round-display').innerText = `Ronda ${R.roundNumber}`;
+
+            if (R.state === 'LOBBY') {
+                $('lobby-modal').classList.remove('hidden');
+                $('lobby-initial-actions').classList.add('hidden');
+                $('lobby-room-waiting').classList.remove('hidden');
+                $('display-room-code').innerText = R.code;
+                $('player-count-badge').innerText = `${R.players.length}/8`;
+                $('players-waiting-list').innerHTML = R.players.map((p) => `
+                    <div class="flex justify-between items-center bg-black/50 px-4 py-2 rounded-xl border border-white/5 mb-1">
+                        <span class="font-bold text-amber-300 text-base">${esc(p.name)} ${p.id === R.hostId ? '👑 (Host)' : ''}</span>
+                        <span class="text-xs text-gray-400 font-bold bg-gray-800 px-2 py-1 rounded-md">${p.isBot ? '🤖 BOT' : '👤 HUMÀ'}</span>
+                    </div>`).join('');
+                $('host-controls').classList.toggle('hidden', !isHost);
+                $('guest-waiting-msg').classList.toggle('hidden', isHost);
+            } else {
+                $('lobby-modal').classList.add('hidden');
+            }
+
+            renderOpponents();
+            renderTable();
+            renderHumanHand();
+            renderLogs();
+            updateControls();
+
+            const seq = R.blingSeq || 0;
+            if (lastBlingSeen !== null && seq > lastBlingSeen) triggerBlingAnimation();
+            lastBlingSeen = seq;
+
+            if (R.state === 'EXCHANGING') {
+                $('end-modal').classList.add('hidden');
+                checkExchangePhase();
+                if (isHost) hostAdvanceExchange();
+            } else {
+                $('exchange-modal').classList.add('hidden');
+                exchangeBuiltKey = null;
+                if (R.state === 'ENDED') showRoundEndModal();
+                else $('end-modal').classList.add('hidden');
+            }
+
+            if (isHost && R.state === 'PLAYING') {
+                const cur = R.players[R.currentPlayerIndex];
+                if (cur && cur.isBot && !cur.finished && !botTimer) {
+                    botTimer = setTimeout(() => { botTimer = null; botPlayLogic(); }, 1200);
+                }
+            }
+        }
+
+        function renderOpponents() {
+            const box = $('opponents-container');
+            box.innerHTML = '';
+            roomData.players.forEach((p, idx) => {
+                if (p.id === myUserId) return;
+                const current = idx === roomData.currentPlayerIndex && roomData.state === 'PLAYING';
+                const el = document.createElement('div');
+                el.className = `bg-black/60 backdrop-blur-sm p-3 rounded-2xl border ${current ? 'border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'border-white/10'} flex flex-col justify-between text-xs transition-all`;
+                const badge = p.title ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">${esc(p.title)}</span>` : '';
+                const status = p.finished ? '🏆 Ha acabat' : (p.passed ? `⏸ Ha passat · ${p.hand ? p.hand.length : 0}c` : `${p.hand ? p.hand.length : 0} cartes`);
+                el.innerHTML = `
+                    <div class="flex items-center justify-between font-black gap-1 mb-1">
+                        <span class="truncate text-sm">${p.isBot ? '🤖 ' : ''}${esc(p.name)}</span>${badge}
+                    </div>
+                    <div class="text-[11px] ${p.finished ? 'text-amber-400 font-bold' : (p.passed ? 'text-gray-500' : 'text-gray-300')}">${status}</div>`;
+                box.appendChild(el);
+            });
+        }
+
+        function renderTable() {
+            const cardsDiv = $('table-cards');
+            const info = $('table-info');
+            const rev = $('reverse-indicator');
+            const t = roomData.tableCombination;
+            cardsDiv.innerHTML = '';
+            
+            if (!t || !t.cards.length) {
+                cardsDiv.innerHTML = '<span class="text-emerald-300/50 text-sm md:text-base font-semibold italic">La taula està neta. És el teu torn de sortir!</span>';
+                info.innerText = '';
+                info.classList.add('hidden');
+                rev.classList.add('hidden');
+                return;
+            }
+            
+            t.cards.forEach((c) => cardsDiv.appendChild(createCardElement(c, false)));
+            const label = { single: 'Individual', double: 'Parella', triple: 'Trio', poker: 'Pòquer' }[t.type] || '';
+            
+            rev.classList.toggle('hidden', !t.isEightReverse);
+            
+            const extra = t.isSeven ? ' ⚠️ (7: Només 7 o 8)' : (t.isEightReverse ? ' 🔻 (8: Iguals o Menors)' : '');
+            info.innerText = `A la taula: ${label} de ${t.cards[0].rank}${extra}`;
+            info.classList.remove('hidden');
+        }
+
+        function createCardElement(card, selectable = true, index = null) {
+            const el = document.createElement('div');
+            const red = card.suit === '♥️' || card.suit === '♦️';
+            // Cartes més grans
+            el.className = `playing-card rounded-xl p-2 md:p-3 flex flex-col justify-between w-16 h-24 md:w-20 md:h-32 ${red ? 'card-red' : 'card-black'} font-black cursor-pointer select-none border border-gray-300 shadow-md`;
+            if (index !== null && selected.includes(index)) el.classList.add('selected');
+            el.innerHTML = `
+                <div class="text-sm md:text-base leading-none">${card.rank}</div>
+                <div class="text-center text-2xl md:text-4xl leading-none">${card.suit}</div>
+                <div class="text-sm md:text-base leading-none text-right">${card.rank}</div>`;
+            if (selectable && index !== null) el.onclick = () => toggleSelectCard(index);
+            return el;
+        }
+
+        function isMyTurn() {
+            if (!roomData || roomData.state !== 'PLAYING') return false;
+            const me = roomData.players[roomData.currentPlayerIndex];
+            return !!me && me.id === myUserId && !me.finished;
+        }
+
+        function renderHumanHand() {
+            const handDiv = $('human-hand');
+            handDiv.innerHTML = '';
+            const me = roomData.players.find((p) => p.id === myUserId);
+            if (!me) return;
+            if (!isMyTurn()) selected = [];
+            
+            $('my-player-name-display').innerText = `👤 Tu (${me.name}):`;
+            const badge = $('player-role-badge');
+            if (me.title) { badge.innerText = me.title; badge.classList.remove('hidden'); }
+            else badge.classList.add('hidden');
+
+            if (me.finished) {
+                handDiv.innerHTML = '<div class="text-amber-400 font-black text-xl text-center py-10 w-full">🎉 Has acabat les teves cartes! 🎉</div>';
+                return;
+            }
+            (me.hand || []).forEach((c, i) => handDiv.appendChild(createCardElement(c, true, i)));
+        }
+
+        function toggleSelectCard(index) {
+            if (!isMyTurn()) return;
+            const pos = selected.indexOf(index);
+            if (pos > -1) selected.splice(pos, 1); else selected.push(index);
+            renderHumanHand();
+        }
+
+        function renderLogs() {
+            const box = $('action-log');
+            box.innerHTML = '';
+            (roomData.logs || []).forEach((msg) => {
+                const d = document.createElement('div');
+                d.className = 'py-1 border-b border-white/5';
+                d.innerHTML = msg;
+                box.appendChild(d);
+            });
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function updateControls() {
+            const mine = isMyTurn();
+            $('btn-play').disabled = !mine;
+            $('btn-pass').disabled = !mine || !roomData.tableCombination;
+            
+            const badge = $('player-status-badge');
+            const glow = $('turn-glow');
+            
+            if (mine) {
+                badge.innerText = 'És el teu torn!';
+                badge.className = 'text-xs md:text-sm px-4 py-1 rounded-full font-black bg-amber-500 text-gray-950 border border-amber-300 animate-pulse shadow-md';
+                glow.classList.remove('opacity-0');
+            } else {
+                const cur = roomData.players[roomData.currentPlayerIndex];
+                const meP = roomData.players.find((p) => p.id === myUserId);
+                
+                badge.innerText = meP && meP.passed && roomData.state === 'PLAYING' 
+                    ? '⏸ Has passat (espera nova ronda de taula)'
+                    : (roomData.state === 'PLAYING' && cur ? `Torn de: ${cur.name}` : 'Esperant...');
+                badge.className = 'text-xs md:text-sm px-3 py-1 rounded-full font-bold bg-gray-800 text-gray-400 border border-white/10';
+                glow.classList.add('opacity-0');
+            }
+        }
+
+        function validatePlay(cards, R = roomData) {
+            if (!cards.length) return { valid: false, msg: 'Selecciona almenys una carta de la teva mà.' };
+            const first = cards[0].rank;
+            if (!cards.every((c) => c.rank === first)) return { valid: false, msg: 'Totes les cartes seleccionades han de tenir exactament el mateix valor!' };
+            const val = rankIdx(cards[0]);
+            const t = R.tableCombination;
+
+            // El 2♥ neteja sempre si es tira SOL (independentment de parelles o trios)
+            if (cards.length === 1 && HEART2(cards[0])) {
+                return { valid: true, type: 'single', isClearingTwo: true, isBling: false };
+            }
+
+            if (cards.length === 4) return { valid: true, type: 'poker', isPokerWin: true, isBling: false };
+            if (cards.length > 3) return { valid: false, msg: 'Només pots tirar 1, 2 o 3 cartes iguals (excepte si és un Pòquer de 4).' };
+
+            const type = cards.length === 1 ? 'single' : (cards.length === 2 ? 'double' : 'triple');
+            
+            // Si la taula està buida, pots tirar el que vulguis.
+            if (!t) return { valid: true, type, isSeven: first === '7', isEightReverse: first === '8', isBling: false };
+
+            // Si hi ha cartes a la taula, s'ha de respectar la quantitat
+            if (cards.length !== t.cards.length) return { valid: false, msg: `La taula marca una jugada de ${t.cards.length} carta/es. Has de tirar el mateix nombre!` };
+            
+            const isBling = first === t.cards[0].rank;
+
+            // Regla del 8 aplicant-se AQUESTA tirada
+            if (t.isEightReverse) {
+                // Index 5 és l'index del '8' en l'array RANKS
+                if (val > 5) return { valid: false, msg: '⚠️ Regla del 8 Activa! El jugador anterior ha tirat un 8. Estàs obligat a tirar cartes IGUALS O MENORS a 8.' };
+            } else if (t.isSeven) {
+                if (first !== '7' && first !== '8') return { valid: false, msg: '⚠️ Hi ha un 7 a la taula! L\'única resposta vàlida és un 7 o un 8.' };
+            } else if (val < t.valueIndex) {
+                return { valid: false, msg: 'Has de superar o igualar el valor de les cartes de la taula!' };
+            }
+
+            return {
+                valid: true, type,
+                isSeven: first === '7',
+                // La regla del 8 NOMÉS s'activa si TIREN UN 8 ara mateix. Si tires un 5, el isEightReverse passa a ser false per al següent.
+                isEightReverse: first === '8',
+                isBling
+            };
+        }
+
+        async function humanPlay() {
+            if (!isMyTurn() || busy) return;
+            const me = roomData.players.find((p) => p.id === myUserId);
+            const cards = selected.map((i) => me.hand[i]).filter(Boolean);
+            const check = validatePlay(cards);
+            if (!check.valid) { showMessage(check.msg); return; }
+            selected = [];
+            await executePlay(roomData.players.indexOf(me), cards, check);
+        }
+
+        async function humanPass() {
+            if (!isMyTurn() || busy) return;
+            if (!roomData.tableCombination) { showMessage('No pots passar si la taula està buida! Estàs obligat a sortir amb alguna carta.'); return; }
+            selected = [];
+            await executePass(roomData.players.findIndex((p) => p.id === myUserId));
+        }
+
+        function finalizeRound(R) {
+            R.players.forEach((p) => { p.finished = true; });
+            const sorted = [...R.players].sort((a, b) => a.finishOrder - b.finishOrder);
+            sorted.forEach((p, i) => {
+                p.finishOrder = i + 1;
+                const [code, label] = titleFor(i, sorted.length);
+                p.titleCode = code;
+                p.title = label;
+            });
+            R.ranking = sorted.map((p) => p.id);
+            R.state = 'ENDED';
+        }
+
+        async function executePlay(playerIdx, cards, det) {
+            busy = true;
+            try {
+                const R = clone(roomData);
+                const P = R.players[playerIdx];
+                
+                cards.forEach((c) => {
+                    const i = P.hand.findIndex((h) => h.rank === c.rank && h.suit === c.suit);
+                    if (i > -1) P.hand.splice(i, 1);
+                });
+
+                R.consecutivePasses = 0;
+                R.lastPlayerId = P.id;
+                
+                if (det.isBling) {
+                    R.blingSeq = (R.blingSeq || 0) + 1;
+                    R.logs.push(`🌟 <b>BLING!</b> <b>${esc(P.name)}</b> ha igualat el <b>${cards[0].rank}</b>!`);
+                } else {
+                    R.logs.push(`<b>${esc(P.name)}</b> ha tirat ${cards.length}x <b>${cards[0].rank}</b> (${cards.map((c) => c.suit).join('')})`);
+                }
+
+                let clears = false;
+                if (det.isPokerWin) {
+                    R.logs.push(`💥 <b>INSTA-GUANYA!</b> ${esc(P.name)} ha tirat un PÒQUER!`);
+                    P.finished = true;
+                    P.finishOrder = R.finishOrderCounter++;
+                    P.hand = []; // Buida la mà per evitar penalitzacions de 2♥ residuals
+                    clears = true;
+                } else if (det.isClearingTwo) {
+                    R.logs.push(`🧹 <b>${esc(P.name)}</b> ha tirat el <b>2♥️</b> sol. Es neteja la taula directament!`);
+                    clears = true;
+                } else {
+                    R.tableCombination = {
+                        cards, valueIndex: rankIdx(cards[0]), type: det.type,
+                        isSeven: !!det.isSeven, isEightReverse: !!det.isEightReverse
+                    };
+                }
+
+                // Si es queda sense cartes de forma natural
+                if (P.hand.length === 0 && !P.finished) {
+                    P.finished = true;
+                    if (cards.some(HEART2)) {
+                        R.logs.push(`🤡 <b>PENALITZACIÓ FATAL!</b> ${esc(P.name)} ha acabat la partida tirant el <b>2♥️</b>. És el <b>CULO DIRECTE</b>!`);
+                        P.finishOrder = 1000 + R.finishOrderCounter++; // Enviar a l'última posició
+                    } else {
+                        P.finishOrder = R.finishOrderCounter++;
+                        R.logs.push(`🎉 <b>${esc(P.name)}</b> ha acabat les seves cartes i ja està salvat!`);
+                    }
+                }
+
+                const remaining = R.players.filter((p) => !p.finished);
+                if (remaining.length <= 1) {
+                    remaining.forEach((p) => { p.finishOrder = R.finishOrderCounter++; });
+                    finalizeRound(R);
+                } else {
+                    if (clears) {
+                        clearTable(R);
+                    } else if (!R.players.some((p, i) => i !== playerIdx && !p.finished && !p.passed)) {
+                        clearTable(R, '🧹 <i>Ningú més pot tirar. Es neteja la taula!</i>');
+                        clears = true;
+                    }
+                    
+                    R.currentPlayerIndex = clears
+                        ? (P.finished ? nextActive(R.players, playerIdx) : playerIdx) // Si neteja la taula torna a sortir ell (o el següent actiu si ja ha acabat)
+                        : nextEligible(R.players, playerIdx); // Sinó passa al següent que no hagi passat
+                }
+
+                R.logs = R.logs.slice(-60);
+                await backend.set(roomCode, R);
+            } finally { busy = false; setTimeout(() => roomData && renderRoomState(), 0); }
+        }
+
+        async function executePass(playerIdx) {
+            busy = true;
+            try {
+                const R = clone(roomData);
+                const P = R.players[playerIdx];
+                P.passed = true;
+                R.logs.push(`<span class="text-gray-400">⏸ ${esc(P.name)} ha passat (espera ronda neta).</span>`);
+
+                const eligible = R.players.filter((p) => !p.finished && !p.passed);
+                const last = R.players.find((p) => p.id === R.lastPlayerId);
+                const lastIdx = last ? R.players.indexOf(last) : -1;
+
+                if (last && !last.finished && eligible.length === 1 && eligible[0].id === last.id) {
+                    // Si tothom menys l'últim que ha tirat ha passat
+                    clearTable(R, `🧹 <i>Tothom ha passat! Surt <b>${esc(last.name)}</b>.</i>`);
+                    R.currentPlayerIndex = lastIdx;
+                } else if (eligible.length === 0) {
+                    // Si absolutament tothom ha passat o acabat
+                    clearTable(R, '🧹 <i>Tothom ha passat. La taula es neteja.</i>');
+                    R.currentPlayerIndex = nextActive(R.players, lastIdx > -1 ? lastIdx : playerIdx);
+                } else {
+                    R.currentPlayerIndex = nextEligible(R.players, playerIdx);
+                }
+                R.logs = R.logs.slice(-60);
+                await backend.set(roomCode, R);
+            } finally { busy = false; setTimeout(() => roomData && renderRoomState(), 0); }
+        }
+
+        function botChooseMove(R, bot) {
+            const groups = {};
+            bot.hand.forEach((c) => { (groups[c.rank] = groups[c.rank] || []).push(c); });
+
+            // Prioritat al Pòquer
+            const pokerRank = RANKS.find((r) => groups[r] && groups[r].length === 4);
+            if (pokerRank) return { cards: groups[pokerRank], det: { valid: true, type: 'poker', isPokerWin: true, isBling: false } };
+
+            const table = R.tableCombination;
+            const moves = [];
+            
+            for (const r of RANKS) {
+                const g = groups[r];
+                if (!g) continue;
+                // Busca combinacions del mateix tamany que la taula (o màxim 3 si obre)
+                const size = table ? table.cards.length : Math.min(g.length, 3);
+                if (g.length < size) continue;
+                
+                const cards = g.slice(0, size);
+                const det = validatePlay(cards, R);
+                if (det.valid) moves.push({ cards, det });
+            }
+            
+            if (!moves.length) {
+                // Si la taula està bloquejada per l'oponent però tenim un 2♥, i NO estem a punt d'acabar (per no ser Culo)
+                const h2 = bot.hand.find(HEART2);
+                if (table && h2 && bot.hand.length > 1) {
+                    const det = validatePlay([h2], R);
+                    if (det.valid) return { cards: [h2], det };
+                }
+                return null;
+            }
+
+            // Filtrar tirades que farien acabar amb el 2♥ i convertir al bot en Culo
+            const losesWithHeart2 = (m) => m.cards.length === bot.hand.length && m.cards.some(HEART2);
+            const safe = moves.filter((m) => !losesWithHeart2(m));
+            
+            const pool = safe.length ? safe : (table ? [] : moves); // Si no hi ha opcions segures i estem obrint, millor tirar un altre.
+            
+            // Preferència per guardar els 2 fins el final
+            const non2 = pool.filter((m) => m.cards[0].rank !== '2');
+            return (non2.length ? non2 : pool)[0] || null;
+        }
+
+        async function botPlayLogic() {
+            if (!isHost || !roomData || roomData.state !== 'PLAYING') return;
+            if (busy) { botTimer = setTimeout(() => { botTimer = null; botPlayLogic(); }, 500); return; }
+            
+            const idx = roomData.currentPlayerIndex;
+            const bot = roomData.players[idx];
+            if (!bot || !bot.isBot || bot.finished) return;
+            
+            const move = botChooseMove(roomData, bot);
+            if (move) await executePlay(idx, move.cards, move.det);
+            else if (roomData.tableCombination) await executePass(idx);
+        }
+
+        function showRoundEndModal() {
+            const box = $('end-rankings');
+            box.innerHTML = '';
+            (roomData.ranking || []).forEach((id, i) => {
+                const p = roomData.players.find((x) => x.id === id);
+                if (!p) return;
+                const row = document.createElement('div');
+                row.className = 'flex justify-between items-center bg-black/40 p-3 rounded-xl border border-white/10 mb-2';
+                row.innerHTML = `<span class="font-bold text-base">${i + 1}. ${esc(p.name)}</span>
+                    <span class="text-xs font-black px-3 py-1.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">${esc(p.title)}</span>`;
+                box.appendChild(row);
+            });
+            $('btn-next-round').classList.toggle('hidden', !isHost);
+            $('guest-next-round-msg').classList.toggle('hidden', isHost);
+            $('end-modal').classList.remove('hidden');
+        }
+
+        async function prepareNextRound() {
+            if (!isHost || !roomData || roomData.state !== 'ENDED') return;
+            const R = clone(roomData);
+            dealTo(R.players);
+            R.roundNumber += 1;
+
+            const find = (code) => R.players.find((p) => p.titleCode === code);
+            const president = find('PRESIDENT'), vice = find('VICEPRESIDENT');
+            const viceculo = find('VICECULO'), culo = find('CULO');
+
+            R.exchange = [];
+            
+            // Regles oficials d'intercanvi Culo
+            if (culo && president) {
+                // El Culo dóna les seves 2 millors cartes
+                const best = culo.hand.splice(-2, 2);
+                president.hand.push(...best);
+                // El President haurà d'escollir quines 2 donar
+                R.exchange.push({ fromId: president.id, toId: culo.id, count: 2 });
+                R.logs.push(`🔄 <b>${esc(culo.name)}</b> (Culo) ha entregat les seves 2 millors cartes a <b>${esc(president.name)}</b>.`);
+            }
+            if (viceculo && vice) {
+                // El Viceculo dóna la seva millor carta
+                const best = viceculo.hand.splice(-1, 1);
+                vice.hand.push(...best);
+                // El Vicepresident haurà d'escollir quina donar
+                R.exchange.push({ fromId: vice.id, toId: viceculo.id, count: 1 });
+                R.logs.push(`🔄 <b>${esc(viceculo.name)}</b> (Viceculo) ha entregat la seva millor carta a <b>${esc(vice.name)}</b>.`);
+            }
+            
+            R.players.forEach((p) => sortHand(p.hand));
+            R.state = 'EXCHANGING';
+            R.starterId = president ? president.id : null; // Qui ha guanyat (President) començarà
+            R.ranking = [];
+            R.logs.push(`<b>S'inicia la Ronda ${R.roundNumber}!</b> Fase d'intercanvi de cartes obligatori.`);
+            R.logs = R.logs.slice(-60);
+            
+            await backend.set(roomCode, R);
+        }
+
+        function giveCards(R, entry, cards) {
+            const from = R.players.find((p) => p.id === entry.fromId);
+            const to = R.players.find((p) => p.id === entry.toId);
+            cards.forEach((c) => {
+                const i = from.hand.findIndex((h) => h.rank === c.rank && h.suit === c.suit);
+                if (i > -1) from.hand.splice(i, 1);
+            });
+            to.hand.push(...cards);
+            sortHand(from.hand);
+            sortHand(to.hand);
+            R.logs.push(`🔄 <b>${esc(from.name)}</b> ha escollit i entregat ${cards.length} carta/es a <b>${esc(to.name)}</b>.`);
+        }
+
+        async function hostAdvanceExchange() {
+            if (busy || !roomData || roomData.state !== 'EXCHANGING') return;
+            busy = true;
+            let changed = false;
+            try {
+                const R = clone(roomData);
+                R.exchange = (R.exchange || []).filter((e) => {
+                    const from = R.players.find((p) => p.id === e.fromId);
+                    if (from && from.isBot) {
+                        giveCards(R, e, from.hand.slice(0, e.count)); // El bot dóna automàticament les més baixes (pitjors)
+                        changed = true;
+                        return false;
+                    }
+                    return true;
+                });
+                
+                // Si no queden intercanvis pendents
+                if (R.exchange.length === 0) { 
+                    startPlay(R); 
+                    changed = true; 
+                }
+                
+                if (changed) await backend.set(roomCode, R);
+            } finally { busy = false; if (changed) setTimeout(() => roomData && renderRoomState(), 0); }
+        }
+
+        function checkExchangePhase() {
+            const modal = $('exchange-modal');
+            const entry = (roomData.exchange || []).find((e) => e.fromId === myUserId);
+            const me = roomData.players.find((p) => p.id === myUserId);
+            if (!entry || !me) { modal.classList.add('hidden'); exchangeBuiltKey = null; return; }
+
+            const key = `${roomData.roundNumber}:${me.hand.length}`;
+            if (exchangeBuiltKey !== key) {
+                exchangeBuiltKey = key;
+                exchangeSelected = [];
+                const target = roomData.players.find((p) => p.id === entry.toId);
+                
+                $('exchange-title').innerText = `🔄 Intercanvi (${me.title})`;
+                $('exchange-desc').innerText = `Ets el ${me.title}. Has rebut les millors cartes, ara selecciona ${entry.count} de les teves pitjors carta/es per donar a ${target ? target.name : 'l\'oponent'}.`;
+                $('btn-confirm-exchange').disabled = true;
+                
+                const box = $('exchange-cards-container');
+                box.innerHTML = '';
+                me.hand.forEach((card, idx) => {
+                    const el = createCardElement(card, false);
+                    el.onclick = () => {
+                        const p = exchangeSelected.indexOf(idx);
+                        if (p > -1) { 
+                            exchangeSelected.splice(p, 1); el.classList.remove('selected'); 
+                        } else if (exchangeSelected.length < entry.count) { 
+                            exchangeSelected.push(idx); el.classList.add('selected'); 
+                        }
+                        $('btn-confirm-exchange').disabled = exchangeSelected.length !== entry.count;
+                    };
+                    box.appendChild(el);
+                });
+            }
+            modal.classList.remove('hidden');
+        }
+
+        async function confirmExchange() {
+            if (busy) return;
+            busy = true;
+            try {
+                const R = clone(roomData);
+                const entry = R.exchange.find((e) => e.fromId === myUserId);
+                const me = R.players.find((p) => p.id === myUserId);
+                
+                if (!entry || !me || exchangeSelected.length !== entry.count) return;
+                
+                giveCards(R, entry, exchangeSelected.map((i) => me.hand[i]));
+                R.exchange = R.exchange.filter((e) => e !== entry && e.fromId !== entry.fromId);
+                
+                exchangeSelected = [];
+                exchangeBuiltKey = null;
+                
+                if (R.exchange.length === 0) startPlay(R); // Tots han intercanviat, comencem
+                
+                $('exchange-modal').classList.add('hidden');
+                await backend.set(roomCode, R);
+            } finally { busy = false; setTimeout(() => roomData && renderRoomState(), 0); }
+        }
+
+        async function handlePlayerLeft(id) {
+            if (!isHost || !roomData) return;
+            const R = clone(roomData);
+            const i = R.players.findIndex((p) => p.id === id);
+            if (i < 0) return;
+            
+            const p = R.players[i];
+            if (R.state === 'LOBBY') {
+                R.players.splice(i, 1);
+                R.logs.push(`${esc(p.name)} ha sortit de la sala.`);
+            } else {
+                p.isBot = true;
+                R.logs.push(`🔌 <b>${esc(p.name)}</b> s'ha desconnectat. La IA pren el control de la seva mà.`);
+            }
+            await backend.set(roomCode, R);
+        }
+
+        function leaveRoom() {
+            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+            if (backend && backend.leave) backend.leave();
+            if (botTimer) { clearTimeout(botTimer); botTimer = null; }
+            
+            roomData = null; roomCode = null; isHost = false;
+            selected = []; exchangeSelected = []; exchangeBuiltKey = null; lastBlingSeen = null; busy = false;
+            
+            ['end-modal', 'exchange-modal', 'msg-modal', 'rules-modal'].forEach((id) => $(id).classList.add('hidden'));
+            
+            $('lobby-modal').classList.remove('hidden');
+            $('lobby-initial-actions').classList.remove('hidden');
+            $('lobby-room-waiting').classList.add('hidden');
+            $('room-id-badge').innerText = 'Sala: -';
+            $('round-display').innerText = 'Ronda 1';
+            $('opponents-container').innerHTML = '';
+            $('human-hand').innerHTML = '';
+            $('action-log').innerHTML = '';
+            $('table-info').innerText = '';
+            $('reverse-indicator').classList.add('hidden');
+            $('table-cards').innerHTML = '<span class="text-emerald-300/50 text-sm font-semibold italic">Esperant la primera tirada...</span>';
+            $('btn-play').disabled = true;
+            $('btn-pass').disabled = true;
+            $('player-status-badge').innerText = 'Esperant...';
+        }
+
+        function askLeave() {
+            const playing = roomData && roomData.state !== 'LOBBY';
+            if (!playing || confirm('Segur que vols sortir de la partida i tornar al menú principal?')) leaveRoom();
+        }
+
+        $('btn-show-create').addEventListener('click', createRoom);
+        $('btn-join-room').addEventListener('click', joinRoom);
+        $('btn-add-bot').addEventListener('click', addBot);
+        $('btn-start-online-game').addEventListener('click', startOnlineGame);
+        $('btn-play').addEventListener('click', humanPlay);
+        $('btn-pass').addEventListener('click', humanPass);
+        $('btn-next-round').addEventListener('click', prepareNextRound);
+        $('btn-confirm-exchange').addEventListener('click', confirmExchange);
+        $('btn-close-msg').addEventListener('click', () => $('msg-modal').classList.add('hidden'));
+        
+        $('btn-copy-code').addEventListener('click', async () => {
+            if (!roomCode) return;
+            try { 
+                await navigator.clipboard.writeText(roomCode); 
+                showMessage(`✅ El codi de la sala [ ${roomCode} ] s'ha copiat. Envia'l als teus amics!`);
+            } catch (e) {
+                showMessage(`Aquest és el codi: ${roomCode}`);
+            }
+        });
+
+        $('btn-menu').addEventListener('click', askLeave);
+        $('btn-leave-lobby').addEventListener('click', leaveRoom);
+        $('btn-end-menu').addEventListener('click', leaveRoom);
+        
+        const openRules = () => $('rules-modal').classList.remove('hidden');
+        $('btn-rules-lobby').addEventListener('click', openRules);
+        $('btn-rules-header').addEventListener('click', openRules);
+        $('btn-close-rules').addEventListener('click', () => $('rules-modal').classList.add('hidden'));
+
+        // Inicialització en carregar
+        initBackend();
+    </script>
+</body>
+</html>
