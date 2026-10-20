@@ -11,7 +11,7 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at center, #144723 0%, #081e0e 100%);
+            background: #081e0e; /* Fons fix i fosc */
             color: #ffffff;
             user-select: none;
             touch-action: manipulation;
@@ -67,19 +67,7 @@
         ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between p-2 md:p-4">
-
-    <!-- OVERLAY D'ANIMACIÓ BLING! -->
-    <div id="bling-overlay" class="fixed inset-0 pointer-events-none z-50 flex items-center justify-center hidden">
-        <div class="relative flex items-center justify-center">
-            <svg class="w-72 h-72 md:w-96 md:h-96 drop-shadow-[0_0_40px_rgba(251,191,36,1)] bling-animation" viewBox="0 0 24 24" fill="#fbbf24" stroke="#d97706" stroke-width="0.5">
-                <path d="M12 1.7l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 1.7z"/>
-            </svg>
-            <div class="absolute font-black text-5xl md:text-7xl text-gray-950 tracking-extrabold rotate-[-6deg] drop-shadow-lg border-b-4 border-amber-600 pb-1 bling-animation">
-                BLING!
-            </div>
-        </div>
-    </div>
+<body class="min-h-screen flex flex-col items-center p-2 md:p-4">
 
     <!-- MODAL LOBBY ONLINE -->
     <div id="lobby-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-40">
@@ -147,36 +135,50 @@
         </div>
     </div>
 
-    <!-- CAPÇALERA -->
-    <header class="flex justify-between items-center bg-black/60 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 mb-3 shadow-lg shrink-0">
-        <div class="flex items-center space-x-2">
-            <span class="text-3xl drop-shadow-md">🃏</span>
-            <h1 class="text-xl md:text-2xl font-black tracking-wide text-amber-400 drop-shadow-md">Culo <span class="text-emerald-400 text-sm uppercase font-bold">Online</span></h1>
-        </div>
-        <div class="flex items-center gap-2 md:gap-3">
-            <button id="btn-rules-header" class="text-xs bg-black/60 hover:bg-black/80 px-3 py-1.5 rounded-full border border-white/20 font-bold text-amber-300 transition">📖 Regles</button>
-            <button id="btn-menu" class="text-xs bg-red-900/70 hover:bg-red-800 px-3 py-1.5 rounded-full border border-red-500/30 font-bold text-red-100 transition">🏠 Menú</button>
-            <span id="room-id-badge" class="hidden md:inline-block text-xs bg-black/80 px-3 py-1.5 rounded-full border border-white/20 font-mono text-amber-300 font-bold">Sala: -</span>
-            <span id="round-display" class="text-xs md:text-sm bg-emerald-600 px-4 py-1.5 rounded-full border border-emerald-400 text-white font-black shadow-md">Ronda 1</span>
-        </div>
-    </header>
-
-    <!-- TAULA DE JOC -->
-    <main class="flex-1 flex flex-col justify-between max-w-7xl w-full mx-auto relative my-1 gap-2">
+    <!-- CONTENIDOR PRINCIPAL FIX PER EVITAR SALTS -->
+    <main class="w-full max-w-7xl flex flex-col gap-3 mx-auto relative">
         
-        <!-- OPONENTS (ALTURA FIXA PER EVITAR SALTS) -->
-        <div id="opponents-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3 mb-2 shrink-0 min-h-[84px]"></div>
+        <!-- CAPÇALERA -->
+        <header class="flex justify-between items-center bg-black/60 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 shadow-lg shrink-0">
+            <div class="flex items-center space-x-2">
+                <span class="text-3xl drop-shadow-md">🃏</span>
+                <h1 class="text-xl md:text-2xl font-black tracking-wide text-amber-400 drop-shadow-md">Culo <span class="text-emerald-400 text-sm uppercase font-bold">Online</span></h1>
+            </div>
+            <div class="flex items-center gap-2 md:gap-3">
+                <button id="btn-rules-header" class="text-xs bg-black/60 hover:bg-black/80 px-3 py-1.5 rounded-full border border-white/20 font-bold text-amber-300 transition">📖 Regles</button>
+                <button id="btn-menu" class="text-xs bg-red-900/70 hover:bg-red-800 px-3 py-1.5 rounded-full border border-red-500/30 font-bold text-red-100 transition">🏠 Menú</button>
+                <span id="room-id-badge" class="hidden md:inline-block text-xs bg-black/80 px-3 py-1.5 rounded-full border border-white/20 font-mono text-amber-300 font-bold">Sala: -</span>
+                <span id="round-display" class="text-xs md:text-sm bg-emerald-600 px-4 py-1.5 rounded-full border border-emerald-400 text-white font-black shadow-md">Ronda 1</span>
+            </div>
+        </header>
 
-        <!-- TAULA CENTRAL (FIXA) -->
-        <div class="flex-1 h-[280px] md:h-[350px] shrink-0 casino-table rounded-[2rem] p-6 md:p-10 relative flex flex-col items-center justify-center my-2">
+        <!-- OPONENTS (ALTURA FIXA PER EVITAR SALTS) -->
+        <div id="opponents-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3 shrink-0 h-[84px] md:h-[90px]"></div>
+
+        <!-- TAULA CENTRAL (FIXA I MÉS GRAN) -->
+        <div class="h-[340px] md:h-[440px] w-full shrink-0 casino-table rounded-[2rem] p-6 md:p-10 relative flex flex-col items-center justify-center my-1 shadow-2xl">
+            
+            <!-- BLING A LA TAULA CENTRAL -->
+            <div id="bling-overlay" class="absolute inset-0 pointer-events-none z-50 flex items-center justify-center hidden">
+                <div class="relative flex items-center justify-center">
+                    <svg class="w-64 h-64 md:w-96 md:h-96 drop-shadow-[0_0_40px_rgba(251,191,36,1)] bling-animation" viewBox="0 0 24 24" fill="#fbbf24" stroke="#d97706" stroke-width="0.5">
+                        <path d="M12 1.7l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 1.7z"/>
+                    </svg>
+                    <div class="absolute font-black text-5xl md:text-7xl text-gray-950 tracking-extrabold rotate-[-6deg] drop-shadow-lg border-b-4 border-amber-600 pb-1 bling-animation">
+                        BLING!
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTINGUT DE LA TAULA -->
             <div class="absolute top-4 left-0 right-0 flex justify-center items-center gap-3">
-                <span class="text-xs md:text-sm font-black text-emerald-400/80 uppercase tracking-[0.2em] bg-black/50 px-4 py-1 rounded-full border border-emerald-500/30">Taula Central</span>
+                <span class="text-xs md:text-sm font-black text-emerald-400/80 uppercase tracking-[0.2em] bg-black/50 px-4 py-1 rounded-full border border-emerald-500/30 shadow-md">Taula Central</span>
                 <span id="reverse-indicator" class="hidden text-[10px] md:text-xs font-black bg-amber-500 text-gray-900 border-2 border-amber-300 px-3 py-1 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.6)] animate-bounce">
                     🔻 REGLA DEL 8 ACTIVA (Només iguals o menors!)
                 </span>
             </div>
             
-            <div id="table-cards" class="flex flex-wrap justify-center gap-4 my-6 h-[140px] items-center shrink-0">
+            <div id="table-cards" class="flex flex-wrap justify-center gap-4 h-[140px] md:h-[160px] items-center shrink-0 w-full relative z-10">
                 <span class="text-emerald-300/50 text-sm md:text-base font-semibold italic">La taula està neta. Esperant la tirada...</span>
             </div>
 
@@ -184,18 +186,18 @@
             <div id="table-info" class="absolute bottom-4 text-sm md:text-base font-bold text-amber-300 bg-black/60 px-6 py-1.5 rounded-full border border-amber-500/30 opacity-0 transition-opacity"> - </div>
         </div>
 
-        <!-- HISTORIAL I CONTROLS (ALTURA FIXA) -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4 items-stretch mt-2 shrink-0">
+        <!-- HISTORIAL I CONTROLS (ALTURA FIXA ESTRICtA) -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4 shrink-0">
             <!-- HISTORIAL -->
-            <div class="lg:col-span-1 bg-black/70 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col h-[180px] lg:h-[220px] shadow-lg">
+            <div class="lg:col-span-1 bg-black/70 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col h-[190px] lg:h-[220px] shadow-lg shrink-0">
                 <div class="text-xs md:text-sm font-black text-amber-400 mb-2 flex justify-between items-center border-b border-white/10 pb-2">
                     <span>📜 Historial en Viu</span>
                 </div>
                 <div id="action-log" class="flex-1 overflow-y-auto text-[11px] md:text-xs space-y-1.5 text-gray-300 pr-2"></div>
             </div>
 
-            <!-- CARTES DE L'HUMÀ (ALTURA FIXA ESTRICTA) -->
-            <div class="lg:col-span-3 bg-black/80 backdrop-blur-md border border-amber-500/30 rounded-3xl p-4 md:p-5 flex flex-col justify-between shadow-2xl relative overflow-hidden h-[180px] lg:h-[220px]">
+            <!-- CARTES DE L'HUMÀ -->
+            <div class="lg:col-span-3 bg-black/80 backdrop-blur-md border border-amber-500/30 rounded-3xl p-4 md:p-5 flex flex-col justify-between shadow-2xl relative overflow-hidden h-[190px] lg:h-[220px] shrink-0">
                 <!-- Brillo de fons pel torn -->
                 <div id="turn-glow" class="absolute inset-0 bg-amber-500/5 opacity-0 transition-opacity duration-500 pointer-events-none"></div>
 
@@ -744,7 +746,7 @@
                 if (p.id === myUserId) return;
                 const current = idx === roomData.currentPlayerIndex && roomData.state === 'PLAYING';
                 const el = document.createElement('div');
-                el.className = `bg-black/60 backdrop-blur-sm p-3 rounded-2xl border ${current ? 'border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'border-white/10'} flex flex-col justify-between text-xs transition-all h-[84px]`;
+                el.className = `bg-black/60 backdrop-blur-sm p-3 rounded-2xl border ${current ? 'border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'border-white/10'} flex flex-col justify-between text-xs transition-all h-full`;
                 const badge = p.title ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">${esc(p.title)}</span>` : '';
                 const status = p.finished ? '🏆 Ha acabat' : (p.passed ? `⏸ Ha passat · ${p.hand ? p.hand.length : 0}c` : `${p.hand ? p.hand.length : 0} cartes`);
                 el.innerHTML = `
@@ -1012,8 +1014,8 @@
                                 clearTable(R, `🌟 <b>BLING MORTAL!</b> <b>${esc(P.name)}</b> salta a <b>${esc(R.players[nextPlayerIdx].name)}</b> i torna a ell. Es neteja la taula!`);
                                 R.currentPlayerIndex = P.finished ? nextActive(R.players, playerIdx) : playerIdx;
                             } else {
-                                // Salta 1 jugador cap a la seguent persona
-                                R.logs.push(`🌟 <b>BLING!</b> <b>${esc(P.name)}</b> fa saltar el torn de <b>${esc(R.players[nextPlayerIdx].name)}</b>!`);
+                                // MÉS CLAR: Especifiquem a l'historial que NO està eliminat.
+                                R.logs.push(`🌟 <b>BLING!</b> <b>${esc(P.name)}</b> SALTA EL TORN a <b>${esc(R.players[nextPlayerIdx].name)}</b> 🛑 (Però podrà tornar a tirar si la ronda no es neteja).`);
                                 R.currentPlayerIndex = afterSkipIdx;
                             }
                         } else {
