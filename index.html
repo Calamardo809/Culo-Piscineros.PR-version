@@ -14,10 +14,9 @@ body{font-family:'Inter',system-ui,sans-serif;background:#081e0e;color:#fff;user
 .card.selected{transform:translateY(-18px) scale(1.08);border:3px solid #f59e0b!important;box-shadow:0 0 25px rgba(245,158,11,.9);z-index:10}
 .red{color:#dc2626}.blk{color:#111827}
 .table{background:radial-gradient(circle at center,#0f4c23,#062b11);box-shadow:inset 0 0 40px rgba(0,0,0,.8);border:4px solid #10b981}
-#table-cards{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;position:relative;min-height:120px;padding:0 14px;overflow:visible}
-#table-cards .card{margin-left:-10px;transform:translateY(0);box-shadow:0 6px 12px rgba(0,0,0,.38);position:relative;z-index:1}
-#table-cards .card:first-child{margin-left:0}
-#table-cards .card:hover{transform:translateY(-4px)}
+#table-cards{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;width:100%;min-height:120px;padding:0 8px}
+#table-cards .card{margin:0}
+#table-cards .card:hover{transform:none}
 @keyframes pop{0%{transform:scale(0) rotate(-45deg);opacity:0}50%{transform:scale(1.4) rotate(12deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
 .pop{animation:pop .6s cubic-bezier(.175,.885,.32,1.275) forwards}
 .panel{background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);border-radius:1rem}
@@ -91,7 +90,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#081e0e;color:#fff;user
    <span class="text-xs font-black text-emerald-400/80 uppercase tracking-widest bg-black/50 px-4 py-1 rounded-full">Taula Central</span>
    <span id="reverse-indicator" class="hidden text-[10px] md:text-xs font-black bg-amber-500 text-gray-900 px-3 py-1 rounded-full animate-bounce">🔻 REGLA DEL 8 (només iguals o menors a 8)</span>
   </div>
-  <div id="table-cards" class="flex flex-wrap justify-center gap-3 h-[120px] md:h-[150px] items-center w-full z-10"></div>
+  <div id="table-cards" class="w-full z-10"></div>
   <div id="table-info" class="absolute bottom-4 text-sm font-bold text-amber-300 bg-black/60 px-6 py-1.5 rounded-full opacity-0 transition-opacity"> - </div>
  </div>
 
@@ -647,7 +646,7 @@ function renderTable(){
   cd.innerHTML='<span class="text-emerald-300/50 font-semibold italic">La taula està neta.</span>';
   info.classList.add('opacity-0');rev.classList.add('hidden');return;
  }
- t.cards.forEach((c,idx)=>{
+ t.cards.forEach(c=>cd.appendChild(cardEl(c)));
   const el=cardEl(c);
   el.style.marginLeft=idx===0?'0':'-10px';
   el.style.zIndex=String((t.cards.length-idx));
